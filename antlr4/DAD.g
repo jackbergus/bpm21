@@ -33,3 +33,11 @@ INTNUMBER : ('0'..'9')+ ;
 NUMBER : INTNUMBER ('.' INTNUMBER)?;
 STRING : '"' (~[\\"] | '\\' [\\"])* '"';
 SPACE : [ \t\n]+ -> skip;
+
+COMMENT
+    : '/*' .*? '*/' -> skip
+;
+
+LINE_COMMENT
+    : '//' ~[\r\n]* -> skip
+;

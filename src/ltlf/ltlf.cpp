@@ -621,7 +621,86 @@ struct ltlf ltlf::negate() const {
             return curr;
         }
         case NUMERIC_ATOM: {
-            throw std::runtime_error("negate: implement for Interval");
+            DataPredicate local = numeric_atom;
+            switch (numeric_atom.casusu) {
+                case LT:
+                    local.casusu = GEQ;
+                    return ltlf::Interval(local);
+
+                case GT:
+                    local.casusu = LEQ;
+                    return ltlf::Interval(local);
+
+                case GEQ:
+                    local.casusu = LT;
+                    return ltlf::Interval(local);
+
+                case LEQ:
+                    local.casusu = GT;
+                    return ltlf::Interval(local);
+
+                case EQ:
+                    local.casusu = NEQ;
+                    return ltlf::Interval(local);
+
+                case NEQ:
+                    local.casusu = EQ;
+                    return ltlf::Interval(local);
+
+                case INTERVAL: {
+                    ltlf formula = ltlf::True().negate();
+                    bool isFormulaSet = false;
+
+                    bool isString = std::holds_alternative<std::string>(numeric_atom.value);
+                    std::variant<std::string, double> l_min, l_max;
+                    if (isString) {
+                        l_min = DataPredicate::MIN_STRING;
+                        l_max = DataPredicate::MAX_STRING;
+                    } else {
+                        l_min = DataPredicate::MIN_DOUBLE;
+                        l_max = DataPredicate::MAX_DOUBLE;
+                    }
+
+                    if (numeric_atom.value != l_min) {
+                        isFormulaSet = true;
+                        DataPredicate min;
+                        min.value = l_min;
+                        min.value_upper_bound = DataPredicate::prev_of(numeric_atom.value);
+                        min.var = numeric_atom.var;
+                        min.label = numeric_atom.label;
+                        formula = ltlf::Interval(min);
+                    }
+                    if (numeric_atom.value_upper_bound != l_max) {
+                        DataPredicate max;
+                        max.value = DataPredicate::next_of(numeric_atom.value_upper_bound);
+                        max.value_upper_bound = l_max;
+                        max.var = numeric_atom.var;
+                        max.label = numeric_atom.label;
+                        if (isFormulaSet) {
+                            formula = ltlf::Or(ltlf::Interval(max), formula);
+                        } else {
+                            isFormulaSet = true;
+                            formula = ltlf::Interval(max);
+                        }
+                    }
+
+                    for (const auto& elem : numeric_atom.exceptions) {
+                        DataPredicate element;
+                        element.value = elem;
+                        element.value_upper_bound = elem;
+                        element.var = numeric_atom.var;
+                        element.label = numeric_atom.label;
+                        if (isFormulaSet) {
+                            formula = ltlf::Or(ltlf::Interval(element), formula);
+                        } else {
+                            isFormulaSet = true;
+                            formula = ltlf::Interval(element);
+                        }
+                    }
+
+                    return formula;
+                }
+            }
         }
         case NEG_OF:
             return args.at(0).simplify();
@@ -647,7 +726,6 @@ struct ltlf ltlf::negate() const {
 struct ltlf ltlf::nnf() const {
     switch (casusu) {
         case NEG_OF:
-        case NUMERIC_ATOM:
             return args.at(0).negate();
         case OR:
             return Or(args.at(0).nnf(), args.at(1).nnf());

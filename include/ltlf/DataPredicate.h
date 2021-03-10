@@ -59,15 +59,27 @@ enum numeric_atom_cases {
 std::string prev_char(const std::string& val, size_t max_size);
 std::string next_char(const std::string& val, size_t max_size);
 
+#define     prev_double(x_val)  (std::nextafter((x_val), -DBL_MAX))
+#define     next_double(x_val)  (std::nextafter((x_val),  DBL_MAX))
+
 #define MAXIMUM_STRING_LENGTH       (1000)
 
 
 struct DataPredicate {
+    static double      MIN_DOUBLE;
+    static double      MAX_DOUBLE;
+    static std::string MIN_STRING;
+    static std::string MAX_STRING;
+
+    std::string                       label;
     std::string                       var;
     numeric_atom_cases                casusu;
     std::variant<std::string, double> value;
     std::variant<std::string, double> value_upper_bound;
     std::unordered_set<std::variant<std::string, double>> exceptions;
+
+    static std::variant<std::string, double> prev_of(const std::variant<std::string, double>& x);
+    static std::variant<std::string, double> next_of(const std::variant<std::string, double>& x);
 
     DataPredicate();
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::variant<std::string, double> &value);
@@ -81,11 +93,10 @@ struct DataPredicate {
     friend std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate);
     void asInterval();
     void intersect_with(const DataPredicate& predicate);
-    bool test(const std::string& val) const;
-    bool test(double val) const;
+    bool test(const  std::string& val) const;
+    bool test(       double       val) const;
 
     bool operator==(const DataPredicate &rhs) const;
-
     bool operator!=(const DataPredicate &rhs) const;
 };
 
@@ -96,6 +107,7 @@ namespace std {
         std::size_t operator()(const DataPredicate& k) const {
             size_t seed = 31;
             seed = hash_combine(seed, k.value);
+            seed = hash_combine(seed, k.label);
             seed = hash_combine(seed, k.casusu);
             seed = hash_combine(seed, k.var);
             if (k.casusu == INTERVAL) {

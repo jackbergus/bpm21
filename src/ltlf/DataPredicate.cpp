@@ -21,7 +21,14 @@
 // Created by giacomo on 10/03/21.
 //
 
+#include <iomanip>
 #include "ltlf/DataPredicate.h"
+
+double      DataPredicate::MIN_DOUBLE = -std::numeric_limits<double>::max();
+double      DataPredicate::MAX_DOUBLE =  std::numeric_limits<double>::max();
+std::string DataPredicate::MIN_STRING = "";
+std::string DataPredicate::MAX_STRING =  std::string(MAXIMUM_STRING_LENGTH, std::numeric_limits<char>::max());
+
 
 DataPredicate::DataPredicate() : var{"x"}, casusu{EQ}, value{0.0} {}
 
@@ -36,12 +43,15 @@ std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate) {
     if (predicate.casusu == INTERVAL) {
         double isString = std::holds_alternative<std::string>(predicate.value);
         if (isString)
-            os << std::get<std::string>(predicate.value);
+            os << std::quoted(std::get<std::string>(predicate.value).c_str());
         else
             os << std::get<double>(predicate.value);
-        os << " ≤ " << predicate.var << " ≤ ";
+        os << " ≤ ";
+        if (!predicate.label.empty())
+            os <<  predicate.label << '.';
+        os << predicate.var << " ≤ ";
         if (isString)
-            os << std::get<std::string>(predicate.value_upper_bound);
+            os << std::quoted(std::get<std::string>(predicate.value_upper_bound).c_str());
         else
             os << std::get<double>(predicate.value_upper_bound);
         if (!predicate.exceptions.empty()) {
@@ -50,7 +60,7 @@ std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate) {
             size_t i = 0;
             for (const auto& x : predicate.exceptions) {
                 if (isString)
-                    os << std::get<std::string>(x);
+                    os << std::quoted(std::get<std::string>(x).c_str());
                 else
                     os << std::get<double>(x);
                 if (i != (N-1)) {
@@ -62,6 +72,8 @@ std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate) {
         }
         return os;
     } else {
+        if (!predicate.label.empty())
+            os  << predicate.label << '.';
         os << predicate.var;
         switch (predicate.casusu) {
             case LT:
@@ -78,7 +90,7 @@ std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate) {
                 os << " ≠ "; break;
         }
         if (std::holds_alternative<std::string>(predicate.value))
-            return os << std::get<std::string>(predicate.value);
+            return os << std::quoted(std::get<std::string>(predicate.value).c_str());
         else
             return os << std::get<double>(predicate.value);
     }
@@ -190,10 +202,7 @@ void DataPredicate::intersect_with(const DataPredicate& predicate) {
 
 void DataPredicate::asInterval() {
     if (casusu == INTERVAL) return;
-    static double MIN_DOUBLE = -std::numeric_limits<double>::max();
-    static double MAX_DOUBLE = std::numeric_limits<double>::max();
-    static std::string MIN_STRING;
-    static std::string MAX_STRING = std::string(MAXIMUM_STRING_LENGTH, std::numeric_limits<char>::max());
+
 
     bool isString = std::holds_alternative<std::string>(value);
     std::variant<std::string, double> prev, next;
@@ -208,8 +217,8 @@ void DataPredicate::asInterval() {
         double x_val = std::get<double>(value);
         min = MIN_DOUBLE;
         max = MAX_DOUBLE;
-        prev = std::nextafter(x_val, -DBL_MAX);
-        next = std::nextafter(x_val, DBL_MAX);
+        prev = prev_double(x_val);
+        next = next_double(x_val);
     }
 
     switch (casusu) {
@@ -294,7 +303,8 @@ bool DataPredicate::test(double val) const {
 }
 
 bool DataPredicate::operator==(const DataPredicate &rhs) const {
-    return var == rhs.var &&
+    return label == rhs.label &&
+           var == rhs.var &&
            casusu == rhs.casusu &&
            value == rhs.value &&
            value_upper_bound == rhs.value_upper_bound &&
@@ -303,4 +313,18 @@ bool DataPredicate::operator==(const DataPredicate &rhs) const {
 
 bool DataPredicate::operator!=(const DataPredicate &rhs) const {
     return !(rhs == *this);
+}
+
+std::variant<std::string, double> DataPredicate::prev_of(const std::variant<std::string, double> &x) {
+    if (std::holds_alternative<std::string>(x))
+        return {prev_char(std::get<std::string>(x), MAXIMUM_STRING_LENGTH)};
+    else
+        return {prev_double(std::get<double>(x))};
+}
+
+std::variant<std::string, double> DataPredicate::next_of(const std::variant<std::string, double> &x) {
+    if (std::holds_alternative<std::string>(x))
+        return {next_char(std::get<std::string>(x), MAXIMUM_STRING_LENGTH)};
+    else
+        return {next_double(std::get<double>(x))};
 }

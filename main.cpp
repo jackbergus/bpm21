@@ -46,7 +46,6 @@ int main() {
 
     DeclareModelParse mp;
     std::ifstream stream ("test_file.txt");
-    for (const auto& x : mp.load(stream))
-        std::cout << x.toFiniteSemantics() << std::endl;
+    std::cout << mp.load_model_to_semantics(stream).nnf().simplify() << std::endl;
 
 }
