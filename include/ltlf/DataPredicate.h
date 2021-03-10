@@ -27,7 +27,24 @@
 #include <string>
 #include <variant>
 #include <ostream>
+
+namespace std {
+    template <>
+    struct hash<std::variant<std::string, double>>
+    {
+        std::size_t operator()(const std::variant<std::string, double>& k) const {
+            return std::holds_alternative<double>(k) ?
+                   (13*std::hash<double>{}(std::get<double>(k))) :
+                   (31*std::hash<std::string>{}(std::get<std::string>(k)));
+        }
+    };
+
+}
+
 #include <utils/numeric/hash_combine.h>
+#include <utils/numeric/uset_hash.h>
+#include <cmath>
+#include <cfloat>
 
 enum numeric_atom_cases {
     LT,
@@ -35,15 +52,24 @@ enum numeric_atom_cases {
     LEQ,
     GEQ,
     EQ,
-    NEQ
+    NEQ,
+    INTERVAL
 };
+
+std::string prev_char(const std::string& val, size_t max_size);
+std::string next_char(const std::string& val, size_t max_size);
+
+#define MAXIMUM_STRING_LENGTH       (1000)
+
 
 struct DataPredicate {
     std::string                       var;
     numeric_atom_cases                casusu;
     std::variant<std::string, double> value;
+    std::variant<std::string, double> value_upper_bound;
+    std::unordered_set<std::variant<std::string, double>> exceptions;
 
-    DataPredicate();;
+    DataPredicate();
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::variant<std::string, double> &value);
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::string &value);
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const double &value);
@@ -54,8 +80,10 @@ struct DataPredicate {
     DataPredicate negate() const;
 
     friend std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate);
-    bool operator==(const DataPredicate &rhs) const;
-    bool operator!=(const DataPredicate &rhs) const;
+    void asInterval();
+    void intersect_with(const DataPredicate& predicate);
+    bool test(const std::string& val) const;
+    bool test(double val) const;
 };
 
 namespace std {
@@ -63,7 +91,15 @@ namespace std {
     struct hash<DataPredicate>
     {
         std::size_t operator()(const DataPredicate& k) const {
-            return hash_combine(hash_combine(hash_combine(31, k.var), k.casusu), k.value);
+            size_t seed = 31;
+            seed = hash_combine(seed, k.value);
+            seed = hash_combine(seed, k.casusu);
+            seed = hash_combine(seed, k.var);
+            if (k.casusu == INTERVAL) {
+                seed = hash_combine(seed, k.value_upper_bound);
+                return hash_combine(seed, k.exceptions);
+            }
+            return seed;
         }
     };
 

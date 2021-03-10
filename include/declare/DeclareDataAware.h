@@ -27,21 +27,21 @@
 /**
  * Definition of all the types of Declare statements
  */
-enum declare_tempaltes {
-    EXISTENCE,
-    ABSENCE,
-    EXACTLY,
-    INIT,
-    RESP_EXISTENCE,
-    CO_EXISTENCE,
-    RESPONSE,
-    PRECEDENCE,
-    ALT_RESPONSE,
-    ALT_PRECEDENCE,
-    CHAIN_RESPONSE,
-    CHAIN_PRECEDENCE,
-    SUCCESSION,
-    NOT_SUCCESSION
+enum declare_templates {
+    Existence,
+    Absence,
+    Exactly,
+    Init,
+    RespExistence,
+    CoExistence,
+    Response,
+    Precedence,
+    AltResponse,
+    AltPrecedence,
+    ChainResponse,
+    ChainPrecedence,
+    Succession,
+    NotSuccession
 };
 
 #include <string>
@@ -50,10 +50,13 @@ enum declare_tempaltes {
 #include <ltlf/DataPredicate.h>
 #include <utils/numeric/pair_hash.h>
 #include <utils/numeric/vector_hash.h>
+#include <ostream>
+
+void print_conj(std::ostream &os, const std::unordered_map<std::string, DataPredicate>& map);
+void print_dnf(std::ostream &os, const std::vector<std::unordered_map<std::string, DataPredicate>>& map);
 
 struct DeclareDataAware {
-    declare_tempaltes casusu;
-
+    declare_templates casusu;
     size_t n;
     std::string left_act, right_act;
 
@@ -66,6 +69,9 @@ struct DeclareDataAware {
     DeclareDataAware& operator=(const DeclareDataAware& )=default;
     DeclareDataAware& operator=( DeclareDataAware&& )=default;
 
+    friend std::ostream &operator<<(std::ostream &os, const DeclareDataAware &aware);
+
+    /*
     static struct basic_declare Existence(size_t n, const std::string& act);
     static struct basic_declare Absence(size_t n, const std::string& act);
     static struct basic_declare Exactly(size_t n, const std::string& act);
@@ -79,7 +85,7 @@ struct DeclareDataAware {
     static struct basic_declare ChainResponse(const std::string& left, const std::string& right);
     static struct basic_declare ChainPrecedence(const std::string& left, const std::string& right);
     static struct basic_declare Succession(const std::string& left, const std::string& right);
-    static struct basic_declare NotSuccession(const std::string& left, const std::string& right);
+    static struct basic_declare NotSuccession(const std::string& left, const std::string& right);*/
 
 };
 

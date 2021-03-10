@@ -21,8 +21,32 @@
  
 
 #include <iostream>
+#include <ltlf/DataPredicate.h>
+#include <fstream>
+#include <declare/DeclareModelParse.h>
+#include <DADLexer.h>
+#include <DADParser.h>
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+/*
+    DataPredicate x_1{"x", LT, 0.2};
+    DataPredicate x_2{"x", GEQ, -1.0};
+    std::cout << x_1 << std::endl;
+    std::cout << x_2 << std::endl;
+    x_1.intersect_with(x_2);
+    std::cout << x_1 << std::endl;
+
+    DataPredicate x_3{"x", NEQ, 5.0};
+    x_1.intersect_with(x_3);
+    std::cout << x_1 << std::endl;
+
+    DataPredicate x_4{"x", NEQ, 0.001};
+    x_1.intersect_with(x_4);
+    std::cout << x_1 << std::endl;*/
+
+    DeclareModelParse mp;
+    std::ifstream stream ("test_file.txt");
+    for (const auto& x : mp.load(stream))
+        std::cout << x << std::endl;
+
 }

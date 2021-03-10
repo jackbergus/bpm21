@@ -2,7 +2,7 @@ grammar DAD;
 
 data_aware_declare: (declare)*;
 
-declare: name=LABEL '(' (fields)+ ')'            #nary_prop
+declare: name=LABEL '(' (fields ',')+ fields ')'            #nary_prop
        | name=LABEL '(' fields ',' INTNUMBER ')' #unary_prop
        ;
 
@@ -28,7 +28,7 @@ rel   : '<' #lt
       ;
 
 VAR: ('a'..'z')+;
-LABEL: ('A'..'Z')[a-zA-Z]+;
+LABEL: ('A'..'Z')[a-zA-Z]*;
 INTNUMBER : ('0'..'9')+ ;
 NUMBER : INTNUMBER ('.' INTNUMBER)?;
 STRING : '"' (~[\\"] | '\\' [\\"])* '"';

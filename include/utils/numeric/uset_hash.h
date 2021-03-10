@@ -28,12 +28,28 @@
 
 #include <utils/numeric/hash_combine.h>
 #include <unordered_set>
+#include <set>
 
 namespace std {
     template <typename T>
     struct hash<std::unordered_set<T>>
     {
         std::size_t operator()(const std::unordered_set<T>& k) const
+        {
+            std::hash<T> thash;
+            size_t init = 31;
+            for (const T& x : k) init += thash(x);
+            return init;
+        }
+    };
+
+}
+
+namespace std {
+    template <typename T>
+    struct hash<std::set<T>>
+    {
+        std::size_t operator()(const std::set<T>& k) const
         {
             std::hash<T> thash;
             size_t init = 31;

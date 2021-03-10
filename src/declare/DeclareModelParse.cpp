@@ -26,20 +26,12 @@
 #include "declare/DeclareModelParse.h"
 #include <DADLexer.h>
 
-void DeclareModelParse::allocateAnew() {
-    lexer = new DADLexer(&stream);
-    tokens = new antlr4::CommonTokenStream(lexer);
-    tokens->fill();
-    parser = new DADParser(tokens);
-    parser->setBuildParseTree(true);
-    expr = parser->data_aware_declare();
-}
+DeclareModelParse::DeclareModelParse() {}
 
-DeclareModelParse::DeclareModelParse() : stream(empty, 0) {}
-
-DeclareModelParse::DeclareModelParse(const std::string &expr) : DeclareModelParse() {
-    orig_for_move_or_copy = expr;
-    sstr.str(expr);
-    stream.load(sstr);
-    allocateAnew();
+std::vector<DeclareDataAware> DeclareModelParse::load(std::ifstream& stream) {
+    antlr4::ANTLRInputStream input(stream);
+    DADLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    DADParser parser(&tokens);
+    return visit(parser.data_aware_declare()).as<std::vector<DeclareDataAware>>();
 }

@@ -1,0 +1,2 @@
+Precedence(A, x < 3.0, B, y >= "ciao" )
+ChainPrecedence(A, x < 3.0, B, y < "bene" )
