@@ -52,10 +52,11 @@ enum formula_t {
 
 
 struct ltlf {
-    formula_t         casusu;
-    std::string       act;
-    std::vector<ltlf> args;
-    bool              is_negated;
+    formula_t              casusu;
+    std::string            act;
+    std::vector<ltlf>      args;
+    bool                   is_negated;
+    bool                   is_compound_predicate;
     DataPredicate          numeric_atom;
 
     // C++ constructors
@@ -63,7 +64,9 @@ struct ltlf {
     ltlf(const std::string& act);
     ltlf(formula_t citki);
     ltlf(const ltlf& ) = default;
+    ltlf(ltlf&&      ) = default;
     ltlf& operator=(const ltlf&) = default;
+    ltlf& operator=(ltlf&&     ) = default;
 
     // Semantic constructors
     static struct ltlf True();
@@ -94,23 +97,23 @@ struct ltlf {
     struct ltlf negate() const;
     struct ltlf nnf() const;
     struct ltlf stepwise_expand() const;
-    std::unordered_set<struct ltlf> propositionalize() const;
-    PropositionalizedAtomsSet possibleActionsUpToNext() const;
+    //std::unordered_set<struct ltlf> propositionalize() const;
+    //PropositionalizedAtomsSet possibleActionsUpToNext() const;
 
-    std::unordered_set<std::string> allActions() const;
+    //std::unordered_set<std::string> allActions() const;
 
 
-    struct ltlf interpret(const std::unordered_set<std::string>& I) const {
+    /*struct ltlf interpret(const std::unordered_set<std::string>& I) const {
         return nnf().simplify().stepwise_expand()._interpret(I);
     }
 
     struct ltlf interpret2(const std::unordered_set<struct ltlf>& I) const {
         return nnf().simplify().stepwise_expand()._interpret2(I);
-    }
+    }*/
 
-    bool isPotentialFinalState() const {
+    /*bool isPotentialFinalState() const {
         return nnf().simplify()._isPotentialFinalState().casusu == TRUE;
-    }
+    }*/
 
     void collectStructuralElements(formula_t type, std::unordered_set<ltlf>& set, bool simplificationType) const;
     bool containsElement(formula_t type, const ltlf& item, bool simplificationType) const;
@@ -124,12 +127,12 @@ struct ltlf {
     bool operator!=(const ltlf &rhs) const;
 
 private:
-    void _propositionalize(std::unordered_set<struct ltlf>& atoms, bool blockNext = false) const;
-    struct ltlf _interpret(const std::unordered_set<std::string>& map) const;
-    void _actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal = true) const;
-    struct ltlf _isPotentialFinalState() const;
-    struct ltlf _interpret2(const std::unordered_set<struct ltlf>& map) const;
-    void _allActions(std::unordered_set<std::string> &labels) const;
+   //void _propositionalize(std::unordered_set<struct ltlf>& atoms, bool blockNext = false) const;
+   // struct ltlf _interpret(const std::unordered_set<std::string>& map) const;
+    //void _actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal = true) const;
+    //struct ltlf _isPotentialFinalState() const;
+    //struct ltlf _interpret2(const std::unordered_set<struct ltlf>& map) const;
+   // void _allActions(std::unordered_set<std::string> &labels) const;
 };
 
 #include <utils/numeric/vector_hash.h>

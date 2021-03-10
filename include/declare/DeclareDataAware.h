@@ -51,9 +51,13 @@ enum declare_templates {
 #include <utils/numeric/pair_hash.h>
 #include <utils/numeric/vector_hash.h>
 #include <ostream>
+#include <ltlf/ltlf.h>
 
 void print_conj(std::ostream &os, const std::unordered_map<std::string, DataPredicate>& map);
 void print_dnf(std::ostream &os, const std::vector<std::unordered_map<std::string, DataPredicate>>& map);
+
+ltlf map_conj(const std::unordered_map<std::string, DataPredicate> &map);
+ltlf map_disj(const std::vector<std::unordered_map<std::string, DataPredicate>> &map);
 
 struct DeclareDataAware {
     declare_templates casusu;
@@ -61,7 +65,9 @@ struct DeclareDataAware {
     std::string left_act, right_act;
 
     // Each map represents a conjunction among different atoms over distinct variables, while the vector represents the disjunction
-    std::vector<std::unordered_map<std::string, DataPredicate>> dnf_left_map, dnf_right_map;
+    std::vector<std::unordered_map<std::string, DataPredicate>>
+    dnf_left_map,
+    dnf_right_map;
 
     DeclareDataAware() = default;
     DeclareDataAware(const DeclareDataAware&) = default;
@@ -71,22 +77,10 @@ struct DeclareDataAware {
 
     friend std::ostream &operator<<(std::ostream &os, const DeclareDataAware &aware);
 
-    /*
-    static struct basic_declare Existence(size_t n, const std::string& act);
-    static struct basic_declare Absence(size_t n, const std::string& act);
-    static struct basic_declare Exactly(size_t n, const std::string& act);
-    static struct basic_declare Init(size_t n, const std::string& act);
-    static struct basic_declare RespondedExistence(const std::string& left, const std::string& right);
-    static struct basic_declare CoExistence(const std::string &left, const std::string &right);
-    static struct basic_declare Response(const std::string& left, const std::string& right);
-    static struct basic_declare Precedence(const std::string& left, const std::string& right);
-    static struct basic_declare AlternateResponse(const std::string& left, const std::string& right);
-    static struct basic_declare AlternatePrecedence(const std::string& left, const std::string& right);
-    static struct basic_declare ChainResponse(const std::string& left, const std::string& right);
-    static struct basic_declare ChainPrecedence(const std::string& left, const std::string& right);
-    static struct basic_declare Succession(const std::string& left, const std::string& right);
-    static struct basic_declare NotSuccession(const std::string& left, const std::string& right);*/
+    ltlf toFiniteSemantics() const;
 
+    static DeclareDataAware doExistence(size_t n, const std::string& left_act, const std::vector<std::unordered_map<std::string, DataPredicate>>& dnf_left_map);
+    static DeclareDataAware doAbsence(size_t n, const std::string& left_act, const std::vector<std::unordered_map<std::string, DataPredicate>>& dnf_left_map);
 };
 
 

@@ -26,11 +26,11 @@
 #include <ltlf/ltlf.h>
 #include <z3++.h>
 
-ltlf::ltlf() : casusu{TRUE}, is_negated{false} { }
+ltlf::ltlf() : casusu{TRUE}, is_negated{false}, is_compound_predicate{false} { }
 
-ltlf::ltlf(const std::string &act) : casusu{ACT}, act{act}, is_negated{false} {}
+ltlf::ltlf(const std::string &act) : casusu{ACT}, act{act}, is_negated{false}, is_compound_predicate{false}  {}
 
-ltlf::ltlf(formula_t citki) : casusu{citki}, is_negated{false}  {}
+ltlf::ltlf(formula_t citki) : casusu{citki}, is_negated{false}, is_compound_predicate{false}   {}
 
 struct ltlf ltlf::True() { return {}; }
 
@@ -107,18 +107,20 @@ std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
     switch (syntax.casusu) {
         case ACT:
             return os << syntax.act;
+        case NUMERIC_ATOM:
+            return os << syntax.numeric_atom;
         case NEG_OF:
-            return os << "!(" << syntax.args[0] << ")";
+            return os << "(!(" << syntax.args[0] << "))";
         case OR:
-            return os << "(" << syntax.args[0] << ") \\/ (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") | (" << syntax.args[1] << ')';
         case AND:
-            return os << "(" << syntax.args[0] << ") /\\ (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") & (" << syntax.args[1] << ')';
         case NEXT:
             return os << "X(" << syntax.args[0] << ")";
         case UNTIL:
             return os << "(" << syntax.args[0] << ") U (" << syntax.args[1] << ')';
         case RELEASE:
-            return os << "(" << syntax.args[0] << ") V (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") R (" << syntax.args[1] << ')';
         case TRUE:
             return os << "true";
         default:
@@ -126,7 +128,7 @@ std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
     }
 }
 
-void ltlf::_allActions(std::unordered_set<std::string> &labels) const {
+/*void ltlf::_allActions(std::unordered_set<std::string> &labels) const {
     switch (casusu) {
         case ACT: {}
             labels.insert(act);
@@ -138,13 +140,13 @@ void ltlf::_allActions(std::unordered_set<std::string> &labels) const {
             for (const auto& arg : args)
                 arg._allActions(labels);
     }
-}
+}*/
 
-std::unordered_set<std::string> ltlf::allActions() const {
+/*std::unordered_set<std::string> ltlf::allActions() const {
     std::unordered_set<std::string> result;
     _allActions(result);
     return result;
-}
+}*/
 
 struct ltlf ltlf::oversimplify() const {
     auto falsehood = True().negate().simplify();
@@ -277,7 +279,7 @@ bool ltlf::containsElement(formula_t type, const ltlf& item, bool simplification
     }
 }
 
-struct ltlf ltlf::_interpret2(const std::unordered_set<struct ltlf> &map) const {
+/*struct ltlf ltlf::_interpret2(const std::unordered_set<struct ltlf> &map) const {
     switch (casusu) {
         case ACT: {
             if (map.contains(*this))
@@ -299,9 +301,9 @@ struct ltlf ltlf::_interpret2(const std::unordered_set<struct ltlf> &map) const 
         default:
             return {*this};
     }
-}
+}*/
 
-struct ltlf ltlf::_isPotentialFinalState() const {
+/*struct ltlf ltlf::_isPotentialFinalState() const {
     switch (casusu) {
         case ACT:
         case TRUE:
@@ -309,6 +311,7 @@ struct ltlf ltlf::_isPotentialFinalState() const {
         case NEG_OF:
         case NEXT:
         case UNTIL:
+        case NUMERIC_ATOM:
             return {FALSE};
 
         case OR:
@@ -323,10 +326,11 @@ struct ltlf ltlf::_isPotentialFinalState() const {
         default:
             throw std::runtime_error("Unexpected case");
     }
-}
+}*/
 
 #include <cassert>
 
+/*
 void ltlf::_actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal) const {
     switch (casusu) {
         case ACT: {}
@@ -352,9 +356,9 @@ void ltlf::_actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal) c
             assert(false);
             break;
     }
-}
+}*/
 
-struct ltlf ltlf::_interpret(const std::unordered_set<std::string>& map) const {
+/*struct ltlf ltlf::_interpret(const std::unordered_set<std::string>& map) const {
     switch (casusu) {
         case ACT:
             if (!is_negated) {
@@ -377,20 +381,21 @@ struct ltlf ltlf::_interpret(const std::unordered_set<std::string>& map) const {
         default:
             return {*this};
     }
-}
-
+}*/
+/*
 PropositionalizedAtomsSet ltlf::possibleActionsUpToNext() const {
     PropositionalizedAtomsSet result;
     nnf().stepwise_expand()._actionsUpToNext(result, true);
     return result;
-}
+}*/
 
-std::unordered_set<struct ltlf> ltlf::propositionalize() const {
+/*std::unordered_set<struct ltlf> ltlf::propositionalize() const {
     std::unordered_set<struct ltlf> result;
     simplify()._propositionalize(result);
     return result;
-}
+}*/
 
+/*
 void ltlf::_propositionalize(std::unordered_set<struct ltlf> &atoms, bool blockNext) const {
     switch (casusu) {
         case ACT: {}
@@ -417,7 +422,7 @@ void ltlf::_propositionalize(std::unordered_set<struct ltlf> &atoms, bool blockN
         case FALSE:
             break;
     }
-}
+}*/
 
 struct ltlf ltlf::stepwise_expand() const {
     switch (casusu) {
@@ -469,6 +474,9 @@ bool ltlf::operator==(const ltlf &rhs) const {
         case RELEASE:
         case NEG_OF:
             return (args == rhs.args);
+
+        case NUMERIC_ATOM:
+            return (numeric_atom == rhs.numeric_atom);
 
         case AND:
         case OR: {
@@ -613,7 +621,7 @@ struct ltlf ltlf::negate() const {
             return curr;
         }
         case NUMERIC_ATOM: {
-
+            throw std::runtime_error("negate: implement for Interval");
         }
         case NEG_OF:
             return args.at(0).simplify();
@@ -639,6 +647,7 @@ struct ltlf ltlf::negate() const {
 struct ltlf ltlf::nnf() const {
     switch (casusu) {
         case NEG_OF:
+        case NUMERIC_ATOM:
             return args.at(0).negate();
         case OR:
             return Or(args.at(0).nnf(), args.at(1).nnf());

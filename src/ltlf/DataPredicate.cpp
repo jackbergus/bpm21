@@ -23,23 +23,6 @@
 
 #include "ltlf/DataPredicate.h"
 
-DataPredicate DataPredicate::negate() const {
-    switch (casusu) {
-        case LT:
-            return {var, GEQ, value};
-        case GT:
-            return {var, LEQ, value};
-        case LEQ:
-            return {var, GT, value};
-        case GEQ:
-            return {var, LT, value};
-        case EQ:
-            return {var, NEQ, value};
-        case NEQ:
-            return {var, EQ, value};
-    }
-}
-
 DataPredicate::DataPredicate() : var{"x"}, casusu{EQ}, value{0.0} {}
 
 DataPredicate::DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::variant<std::string, double> &value) : var(
@@ -308,4 +291,16 @@ bool DataPredicate::test(double val) const {
                     && (val <= std::get<double>(value_upper_bound)));
         }
     }
+}
+
+bool DataPredicate::operator==(const DataPredicate &rhs) const {
+    return var == rhs.var &&
+           casusu == rhs.casusu &&
+           value == rhs.value &&
+           value_upper_bound == rhs.value_upper_bound &&
+           exceptions == rhs.exceptions;
+}
+
+bool DataPredicate::operator!=(const DataPredicate &rhs) const {
+    return !(rhs == *this);
 }

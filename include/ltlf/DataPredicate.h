@@ -77,13 +77,16 @@ struct DataPredicate {
     DataPredicate(DataPredicate&& ) = default;
     DataPredicate& operator=(const DataPredicate&) = default;
     DataPredicate& operator=(DataPredicate&&) = default;
-    DataPredicate negate() const;
 
     friend std::ostream &operator<<(std::ostream &os, const DataPredicate &predicate);
     void asInterval();
     void intersect_with(const DataPredicate& predicate);
     bool test(const std::string& val) const;
     bool test(double val) const;
+
+    bool operator==(const DataPredicate &rhs) const;
+
+    bool operator!=(const DataPredicate &rhs) const;
 };
 
 namespace std {
