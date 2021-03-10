@@ -8,13 +8,16 @@ declare: name=LABEL '(' (fields)+ ')'            #nary_prop
 
 fields: label=LABEL ',' prop;
 
-prop  : VAR rel (NUMBER | STRING)    #atom
-      | 'true'                       #top
-      | 'false'                      #bot
-      |<assoc=right> prop '&&' prop  #and
-      |<assoc=right> prop '||' prop  #or
-      | '~' prop                     #not
+prop  : prop_within_dijunction '||' prop  #disj
+      | prop_within_dijunction            #conj_or_atom
+      | 'true'                            #top
       ;
+
+prop_within_dijunction : atom                              #in_atom
+                       | atom '&&' prop_within_dijunction  #atom_conj
+                       ;
+
+atom : (isnegated='~')? VAR rel (NUMBER | STRING) ;
 
 rel   : '<' #lt
       | '<=' #leq

@@ -39,21 +39,26 @@ enum formula_t {
     RELEASE,
     TRUE,
     FALSE,
+    NUMERIC_ATOM
 };
+
+
 
 #include <string>
 #include <vector>
 #include <ostream>
 #include <ltlf/PropositionalizedAtomsSet.h>
+#include "DataPredicate.h"
+
 
 struct ltlf {
-    formula_t casusu;
-    std::string act;
+    formula_t         casusu;
+    std::string       act;
     std::vector<ltlf> args;
-    bool is_negated;
+    bool              is_negated;
+    DataPredicate          numeric_atom;
 
     // C++ constructors
-
     ltlf();
     ltlf(const std::string& act);
     ltlf(formula_t citki);
@@ -61,9 +66,11 @@ struct ltlf {
     ltlf& operator=(const ltlf&) = default;
 
     // Semantic constructors
-
     static struct ltlf True();
     static struct ltlf Act(const std::string& act);
+    static struct ltlf Interval(const std::string &var, numeric_atom_cases case_, const std::string &value);
+    static struct ltlf Interval(const std::string &var, numeric_atom_cases case_, double value);
+    static struct ltlf Interval(const DataPredicate& value);
     static struct ltlf Neg(const ltlf& sub);
     static struct ltlf Next(const ltlf& sub);
     static struct ltlf Or(const ltlf& left, const ltlf& right);

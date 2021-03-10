@@ -27,16 +27,31 @@
 #define CLASSIFIERS_PAIR_HASH_H
 
 #include <utils/numeric/hash_combine.h>
+#include <unordered_map>
 
 namespace std {
     template <typename T, typename K>
     struct hash<std::pair<T, K>>
     {
-        std::size_t operator()(const std::pair<T, K>& k) const
-        {
+        std::size_t operator()(const std::pair<T, K>& k) const {
             size_t init = 31;
             init = hash_combine<T>(init, k.first);
             init = hash_combine<K>(init, k.second);
+            return init;
+        }
+    };
+
+}
+
+namespace std {
+    template <typename T, typename K>
+    struct hash<std::unordered_map<T, K>>
+    {
+        std::size_t operator()(const std::unordered_map<T, K>& k) const {
+            size_t init = 31;
+            std::hash<std::pair<T, K>> hash_pair;
+            for (const std::pair<T, K>& cp : k)
+                init = hash_combine(init, cp);
             return init;
         }
     };

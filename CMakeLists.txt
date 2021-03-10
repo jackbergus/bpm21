@@ -18,4 +18,23 @@ set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
                   )
 
 
-add_executable(bpm21 main.cpp src/declare/DeclareModelParse.cpp include/declare/DeclareModelParse.h src/ltlf/PropositionalizedAtomsSet.cpp include/ltlf/PropositionalizedAtomsSet.h include/utils/numeric/hash_combine.h src/utils/numeric/hash_combine.cpp src/ltlf/ltlf.cpp include/ltlf/ltlf.h)
+add_executable(bpm21
+
+        main.cpp
+
+        ${antlr_sources}
+
+        src/declare/DeclareModelParse.cpp
+        include/declare/DeclareModelParse.h
+        src/ltlf/PropositionalizedAtomsSet.cpp
+        include/ltlf/PropositionalizedAtomsSet.h
+        include/utils/numeric/hash_combine.h
+        src/utils/numeric/hash_combine.cpp
+        src/ltlf/ltlf.cpp include/ltlf/ltlf.h
+        src/declare/DeclareDataAware.cpp
+        include/declare/DeclareDataAware.h
+        src/ltlf/DataPredicate.cpp
+        include/ltlf/DataPredicate.h
+        include/utils/structures/set_operations.h)
+
+target_link_libraries(bpm21 antlr4_static)

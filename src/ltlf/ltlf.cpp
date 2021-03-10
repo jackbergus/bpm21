@@ -612,6 +612,9 @@ struct ltlf ltlf::negate() const {
             curr.is_negated = !curr.is_negated;
             return curr;
         }
+        case NUMERIC_ATOM: {
+
+        }
         case NEG_OF:
             return args.at(0).simplify();
         case OR:
@@ -650,4 +653,26 @@ struct ltlf ltlf::nnf() const {
         default:
             return {*this};
     }
+}
+
+
+struct ltlf ltlf::Interval(const std::string &var, numeric_atom_cases case_, const std::string& value) {
+    ltlf formula;
+    formula.numeric_atom = {var, case_, value};
+    formula.casusu = NUMERIC_ATOM;
+    return formula;
+}
+
+struct ltlf ltlf::Interval(const std::string &var, numeric_atom_cases case_, double value) {
+    ltlf formula;
+    formula.numeric_atom = {var, case_, value};
+    formula.casusu = NUMERIC_ATOM;
+    return formula;
+}
+
+struct ltlf ltlf::Interval(const DataPredicate &value) {
+    ltlf formula;
+    formula.numeric_atom = value;
+    formula.casusu = NUMERIC_ATOM;
+    return formula;
 }
