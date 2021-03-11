@@ -27,8 +27,7 @@
 #include <DADLexer.h>
 #include <DADParser.h>
 
-int main() {
-/*
+void test_data_predicate() {
     DataPredicate x_1{"x", LT, 0.2};
     DataPredicate x_2{"x", GEQ, -1.0};
     std::cout << x_1 << std::endl;
@@ -42,10 +41,13 @@ int main() {
 
     DataPredicate x_4{"x", NEQ, 0.001};
     x_1.intersect_with(x_4);
-    std::cout << x_1 << std::endl;*/
+    std::cout << x_1 << std::endl;
+}
+
+int main() {
 
     DeclareModelParse mp;
     std::ifstream stream ("test_file.txt");
-    std::cout << mp.load_model_to_semantics(stream).nnf().simplify() << std::endl;
+    ltlf formula = mp.load_model_to_semantics(stream).nnf().simplify();
 
 }
