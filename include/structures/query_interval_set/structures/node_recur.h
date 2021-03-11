@@ -35,6 +35,11 @@ template <typename T> struct node_recur {
     size_t isPointed;   //<@ This fields counts how many query intervals are requiring this step. This will define the interval priority
 
     node_recur(T min, T max) : min(min), max(max), isPointed(0) {}
+    node_recur(): isPointed(0) {}
+    node_recur(const node_recur&) = default;
+    node_recur(node_recur&& )     = default;
+    node_recur& operator=(const node_recur&) = default;
+    node_recur& operator=(node_recur&&     ) = default;
 
     bool operator<(const node_recur &rhs) const {
         if (min < rhs.min) return true;

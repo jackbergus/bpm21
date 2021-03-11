@@ -28,6 +28,8 @@
 
 #include <structures/query_interval_set/structures/forInsertion.h>
 #include <cassert>
+#include <vector>
+#include <queue>
 
 template <typename T, typename PrevNext>
 std::vector<std::pair<T,T>> insert_interval(const PrevNext& indexer, struct node_recur<T>& element, T left, T right) {

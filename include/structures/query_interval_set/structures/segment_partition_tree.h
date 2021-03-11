@@ -33,6 +33,11 @@ template <typename T, typename PrevNext> struct segment_partition_tree {
     struct node_recur<T> element;
 
     segment_partition_tree(T min, T max) : element(min, max) {}
+    segment_partition_tree() : element{} {}
+    segment_partition_tree(const segment_partition_tree& ) = default;
+    segment_partition_tree(segment_partition_tree&&      ) = default;
+    segment_partition_tree& operator=(const segment_partition_tree& ) = default;
+    segment_partition_tree& operator=(segment_partition_tree&&      ) = default;
 
     friend std::ostream &operator<<(std::ostream &os, const segment_partition_tree &tree) {
         os << " min: " << tree.element.min << " max: " << tree.element.max << std::endl;

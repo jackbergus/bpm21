@@ -109,6 +109,7 @@ std::string prev_char(const std::string &val, size_t max_size) {
         result.pop_back();
     } else {
         result[val.size()-1] = last_char-1;
+        result += std::string(MAXIMUM_STRING_LENGTH - result.size(), MAX_CHAR);
     }
     return result;
 }
@@ -116,14 +117,14 @@ std::string prev_char(const std::string &val, size_t max_size) {
 std::string next_char(const std::string &val, size_t max_size) {
     static const char MIN_CHAR = std::numeric_limits<char>::min();
     static const char MAX_CHAR = std::numeric_limits<char>::max();
-    static const std::string MAX_STRING = std::string(MAX_CHAR, max_size);
-    if (val == MAX_STRING) return val;
+    if (val == DataPredicate::MAX_STRING) return val;
 
     std::string next = val;
     size_t idx = next.size();
     if (idx < max_size) {
         next += MIN_CHAR;
     } else {
+        idx--;
         if (next.at(idx) != MAX_CHAR) {
             next[idx]++;
             return next;
@@ -139,7 +140,7 @@ std::string next_char(const std::string &val, size_t max_size) {
                 }
             }
             if (next.empty())
-                return MAX_STRING;
+                return DataPredicate::MAX_STRING;
         }
 
     }
@@ -187,7 +188,7 @@ void DataPredicate::intersect_with(const DataPredicate& predicate) {
         value = std::max(value, rightCopy.value);
         value_upper_bound = std::min(value_upper_bound, rightCopy.value_upper_bound);
 
-        std::unordered_set<std::variant<std::string, double>> S;
+        std::set<std::variant<std::string, double>> S;
         for (const auto& x : exceptions) {
             if ((value <= x) && (x <= value_upper_bound))
                 S.insert(x);
@@ -211,14 +212,14 @@ void DataPredicate::asInterval() {
         std::string s = std::get<std::string>(value);
         min = MIN_STRING;
         max = MAX_STRING;
-        prev = prev_char(s, MAXIMUM_STRING_LENGTH);
-        next = next_char(s, MAXIMUM_STRING_LENGTH);
+        prev = PREV_STRING(s);
+        next = NEXT_STRING(s);
     } else {
         double x_val = std::get<double>(value);
         min = MIN_DOUBLE;
         max = MAX_DOUBLE;
-        prev = prev_double(x_val);
-        next = next_double(x_val);
+        prev = PREV_DOUBLE(x_val);
+        next = NEXT_DOUBLE(x_val);
     }
 
     switch (casusu) {
@@ -317,14 +318,143 @@ bool DataPredicate::operator!=(const DataPredicate &rhs) const {
 
 std::variant<std::string, double> DataPredicate::prev_of(const std::variant<std::string, double> &x) {
     if (std::holds_alternative<std::string>(x))
-        return {prev_char(std::get<std::string>(x), MAXIMUM_STRING_LENGTH)};
+        return {PREV_STRING(std::get<std::string>(x))};
     else
-        return {prev_double(std::get<double>(x))};
+        return {PREV_DOUBLE(std::get<double>(x))};
 }
 
 std::variant<std::string, double> DataPredicate::next_of(const std::variant<std::string, double> &x) {
     if (std::holds_alternative<std::string>(x))
-        return {next_char(std::get<std::string>(x), MAXIMUM_STRING_LENGTH)};
+        return {NEXT_STRING(std::get<std::string>(x))};
     else
-        return {next_double(std::get<double>(x))};
+        return {NEXT_DOUBLE(std::get<double>(x))};
+}
+
+#include <cassert>
+
+bool DataPredicate::isStringPredicate() const {
+    bool isString = std::holds_alternative<std::string>(value);
+    if (casusu == INTERVAL)
+        assert(isString == std::holds_alternative<std::string>(value_upper_bound));
+    return isString;
+}
+
+bool DataPredicate::isDoublePredicate() const {
+    bool isString = std::holds_alternative<double>(value);
+    if (casusu == INTERVAL)
+        assert(isString == std::holds_alternative<double>(value_upper_bound));
+    return isString;
+}
+
+std::variant<std::vector<std::pair<std::string, std::string>>,
+        std::vector<std::pair<double, double>>> DataPredicate::decompose_into_intervals() const {
+    bool isString = isStringPredicate();
+    std::variant<std::vector<std::pair<std::string, std::string>>,
+            std::vector<std::pair<double, double>>> result;
+    if (isString) {
+        result = std::vector<std::pair<std::string, std::string>>{};
+    } else {
+        result = std::vector<std::pair<double, double>>{};
+    }
+
+    std::variant<std::string, double> prev, next;
+    std::variant<std::string, double> min, max;
+    if (isString)  {
+        std::string s = std::get<std::string>(value);
+        min = MIN_STRING;
+        max = MAX_STRING;
+        prev = PREV_STRING(s);
+        next = NEXT_STRING(s);
+    } else {
+        double x_val = std::get<double>(value);
+        min = MIN_DOUBLE;
+        max = MAX_DOUBLE;
+        prev = PREV_DOUBLE(x_val);
+        next = NEXT_DOUBLE(x_val);
+    }
+
+    switch (casusu) {
+        case LT:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(min), std::get<0>(prev));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(min), std::get<1>(prev));
+            }
+            return result;
+
+        case GT:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(next), std::get<0>(max));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(next), std::get<1>(max));
+            }
+            return result;
+
+        case LEQ:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(min), std::get<0>(value));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(min), std::get<1>(value));
+            }
+            return result;
+
+        case GEQ:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(value), std::get<0>(max));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(value), std::get<1>(max));
+            }
+            return result;
+
+        case EQ:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(value), std::get<0>(value));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(value), std::get<1>(value));
+            }
+            return result;
+
+        case NEQ:
+            if (isString) {
+                std::get<0>(result).emplace_back(std::get<0>(min), std::get<0>(prev));
+                std::get<0>(result).emplace_back(std::get<0>(next), std::get<0>(max));
+            } else {
+                std::get<1>(result).emplace_back(std::get<1>(min), std::get<1>(prev));
+                std::get<1>(result).emplace_back(std::get<1>(next), std::get<1>(max));
+            }
+            return result;
+
+        case INTERVAL:
+            if (exceptions.empty()) {
+                if (isString) {
+                    std::get<0>(result).emplace_back(std::get<0>(value), std::get<0>(value_upper_bound));
+                } else {
+                    std::get<1>(result).emplace_back(std::get<1>(value), std::get<1>(value_upper_bound));
+                }
+            } else {
+                size_t i = 0, N = exceptions.size();
+                std::variant<std::string, double> prev = value;
+                for (const auto& val : exceptions) {
+                    if (i == 0) {
+                        if (isString)
+                            std::get<0>(result).emplace_back(std::get<0>(value), PREV_STRING(std::get<0>(val)));
+                        else
+                            std::get<1>(result).emplace_back(std::get<1>(value), PREV_DOUBLE(std::get<1>(val)));
+                    } else if (i == (N-1)) {
+                        if (isString)
+                            std::get<0>(result).emplace_back(PREV_STRING(std::get<0>(prev)), (std::get<0>(value_upper_bound)));
+                        else
+                            std::get<1>(result).emplace_back(PREV_DOUBLE(std::get<1>(prev)), (std::get<1>(value_upper_bound)));
+                    } else {
+                        if (isString)
+                            std::get<0>(result).emplace_back(PREV_STRING(std::get<0>(prev)), PREV_STRING(std::get<0>(val)));
+                        else
+                            std::get<1>(result).emplace_back(PREV_DOUBLE(std::get<1>(prev)), PREV_DOUBLE(std::get<1>(val)));
+                    }
+                    prev = val;
+                    i++;
+                }
+            }
+            return result;
+    }
 }

@@ -45,7 +45,8 @@ template<typename T, typename PrevNext> struct interval_comparator {
 
 template<typename T, typename PrevNext> struct interval_comparator_inverse {
     PrevNext indexer;
-    bool operator()(const std::pair<T,T>& lhs, const std::pair<T,T>& rhs) const {
+    bool operator()(
+            const std::pair<T, T>& lhs, const std::pair<T,T>& rhs) const {
         auto leftDistance = indexer.distance(lhs.second, lhs.first);
         auto rightDistance = indexer.distance(rhs.second, rhs.first);
         return (leftDistance > rightDistance) ||

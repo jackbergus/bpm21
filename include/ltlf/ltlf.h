@@ -92,6 +92,10 @@ struct ltlf {
     const struct ltlf& reduce() const {
         return *this;
     }
+    struct ltlf& setBeingCompound(bool isCompound) {
+        is_compound_predicate = isCompound;
+        return *this;
+    }
     struct ltlf simplify() const;
     struct ltlf oversimplify() const;
     struct ltlf negate() const;

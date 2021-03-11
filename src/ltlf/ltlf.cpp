@@ -102,29 +102,34 @@ struct ltlf ltlf::WeakUntil(const ltlf &left, const ltlf &right) {
 
 
 std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
+    std::string reset = "";
+    if (syntax.is_compound_predicate) {
+        os << "\033[32m";
+        reset = "\033[0m";
+    }
     if (syntax.is_negated)
         os << "!";
     switch (syntax.casusu) {
         case ACT:
-            return os << syntax.act;
+            return os << syntax.act << reset;
         case NUMERIC_ATOM:
-            return os << syntax.numeric_atom;
+            return os << syntax.numeric_atom<< reset;
         case NEG_OF:
-            return os << "(!(" << syntax.args[0] << "))";
+            return os << "(!(" << syntax.args[0] << "))"<< reset;
         case OR:
-            return os << "(" << syntax.args[0] << ") | (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") | (" << syntax.args[1] << ')'<< reset;
         case AND:
-            return os << "(" << syntax.args[0] << ") & (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") & (" << syntax.args[1] << ')'<< reset;
         case NEXT:
-            return os << "X(" << syntax.args[0] << ")";
+            return os << "X(" << syntax.args[0] << ")"<< reset;
         case UNTIL:
-            return os << "(" << syntax.args[0] << ") U (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") U (" << syntax.args[1] << ')'<< reset;
         case RELEASE:
-            return os << "(" << syntax.args[0] << ") R (" << syntax.args[1] << ')';
+            return os << "(" << syntax.args[0] << ") R (" << syntax.args[1] << ')'<< reset;
         case TRUE:
-            return os << "true";
+            return os << "true"<< reset;
         default:
-            return os << "false";
+            return os << "false"<< reset;
     }
 }
 
@@ -153,7 +158,7 @@ struct ltlf ltlf::oversimplify() const {
     auto truth = True();
     switch (casusu) {
         case NEG_OF:
-            return this->nnf().oversimplify();
+            return this->nnf().oversimplify().setBeingCompound(is_compound_predicate);
         case OR: {
 
             {
@@ -188,15 +193,17 @@ struct ltlf ltlf::oversimplify() const {
                     }
                 }
                 assert(set.size() >0);
-                if (set.size()== 1)
-                    return *set.begin();
-                else {
+                if (set.size()== 1) {
+                    auto f = *set.begin();
+                    f.setBeingCompound(is_compound_predicate);
+                    return f;
+                } else {
                     auto f = *set.begin();
                     auto it = set.begin(); it++;
                     for (; it != set.end(); it++) {
                         f = Or(*it, f);
                     }
-                    return f;
+                    return f.setBeingCompound(is_compound_predicate);
                 }
             }
         }
@@ -213,15 +220,17 @@ struct ltlf ltlf::oversimplify() const {
                     if (set.contains(arg.negate().simplify()))
                         return falsehood;
                 assert(set.size() >0);
-                if (set.size()== 1)
-                    return *set.begin();
-                else {
+                if (set.size()== 1) {
+                    auto f = *set.begin();
+                    f.setBeingCompound(is_compound_predicate);
+                    return f;
+                } else {
                     auto f = *set.begin();
                     auto it = set.begin(); it++;
                     for (; it != set.end(); it++) {
                         f = And(*it, f);
                     }
-                    return f;
+                    return f.setBeingCompound(is_compound_predicate);
                 }
             }
         }
@@ -230,28 +239,28 @@ struct ltlf ltlf::oversimplify() const {
             switch (arg.casusu) {
                 case TRUE:
                 case FALSE:
-                    return arg;
+                    return arg.setBeingCompound(is_compound_predicate);
                 case OR:
-                    return Or(Next(arg.args.at(0)), Next(arg.args.at(1))).oversimplify();
+                    return Or(Next(arg.args.at(0)), Next(arg.args.at(1))).oversimplify().setBeingCompound(is_compound_predicate);
                 case AND:
-                    return And(Next(arg.args.at(0)), Next(arg.args.at(1))).oversimplify();
+                    return And(Next(arg.args.at(0)), Next(arg.args.at(1))).oversimplify().setBeingCompound(is_compound_predicate);
                 default:
-                    return Next(arg);
+                    return Next(arg).setBeingCompound(is_compound_predicate);
             }
         }
         case UNTIL: {
             auto left = args.at(0).oversimplify();
             auto right = args.at(1).oversimplify();
             if (right.casusu == OR) {
-                return Or(Until(left, right.args.at(0)), Until(left, right.args.at(1)));
+                return Or(Until(left, right.args.at(0)), Until(left, right.args.at(1))).setBeingCompound(is_compound_predicate);
             } else if (left.casusu == AND) {
-                return And(Until(left.args.at(0), right), Until(left.args.at(1), right));
+                return And(Until(left.args.at(0), right), Until(left.args.at(1), right)).setBeingCompound(is_compound_predicate);
             } else {
-                return Until(left, right);
+                return Until(left, right).setBeingCompound(is_compound_predicate);
             }
         }
         case RELEASE:
-            return ltlf::Release(args.at(0).oversimplify(), args.at(1).oversimplify());
+            return ltlf::Release(args.at(0).oversimplify(), args.at(1).oversimplify()).setBeingCompound(is_compound_predicate);
         default:
             return {*this};
     }
@@ -509,20 +518,20 @@ struct ltlf ltlf::simplify() const {
             auto left = args.at(0).simplify();
             auto right = args.at(1).simplify();
             if (left == right)
-                return left;
+                return left.setBeingCompound(is_compound_predicate);
             if ((left.casusu == TRUE) || (right.casusu == TRUE) || ((left == right.negate())))
                 return True();
             else if (left.casusu == FALSE)
-                return right;
+                return right.setBeingCompound(is_compound_predicate);
             else if ((right.casusu == TRUE) || (left == right))
-                return left;
+                return left.setBeingCompound(is_compound_predicate);
             else if (right.casusu == AND) {
                 right.args[0] = right.args.at(0).simplify();
                 right.args[1] = right.args.at(1).simplify();
                 if ((left == right.args.at(0)) || (left == right.args.at(1))) {
-                    return left;
+                    return left.setBeingCompound(is_compound_predicate);
                 } else {
-                    return ltlf::Or(left, right);
+                    return ltlf::Or(left, right).setBeingCompound(is_compound_predicate);
                 }
             } else if (left.casusu == AND) {
                 left.args[0] = left.args.at(0).simplify();
@@ -530,50 +539,50 @@ struct ltlf ltlf::simplify() const {
                 if ((right == left.args.at(0)) || (right == left.args.at(1))) {
                     return right;
                 } else {
-                    return ltlf::Or(left, right);
+                    return ltlf::Or(left, right).setBeingCompound(is_compound_predicate);
                 }
             } else {
-                return ltlf::Or(left, right);
+                return ltlf::Or(left, right).setBeingCompound(is_compound_predicate);
             }
         }
         case AND: {
             auto left = args.at(0).simplify();
             auto right = args.at(1).simplify();
             if (left == right)
-                return left;
+                return left.setBeingCompound(is_compound_predicate);
             if ((left.casusu == FALSE) || (right.casusu == FALSE))
                 return True().negate();
             else if (left.casusu == TRUE)
-                return right;
+                return right.setBeingCompound(is_compound_predicate);
             else if (right.casusu == TRUE)
-                return left;
+                return left.setBeingCompound(is_compound_predicate);
             else if (right.casusu == OR) {
                 right.args[0] = right.args.at(0).simplify();
                 right.args[1] = right.args.at(1).simplify();
                 if ((left == right.args.at(0)) || (left == right.args.at(1))) {
-                    return left;
+                    return left.setBeingCompound(is_compound_predicate);
                 } else {
                     return ltlf::Or(ltlf::And(left, right.args.at(0)),
-                                    ltlf::And(left, right.args.at(1))).simplify();
+                                    ltlf::And(left, right.args.at(1))).simplify().setBeingCompound(is_compound_predicate);
                 }
             } else if (left.casusu == OR) {
                 left.args[0] = left.args.at(0).simplify();
                 left.args[1] = left.args.at(1).simplify();
                 if ((right == left.args.at(0)) || (right == left.args.at(1))) {
-                    return right;
+                    return right.setBeingCompound(is_compound_predicate);
                 } else {
                     return ltlf::Or(ltlf::And(right, left.args.at(0)),
-                                    ltlf::And(right, left.args.at(1))).simplify();
+                                    ltlf::And(right, left.args.at(1))).simplify().setBeingCompound(is_compound_predicate);
                 }
             } else if (left.casusu == AND) {
                 left.args[0] = left.args.at(0).simplify();
                 left.args[1] = left.args.at(1).simplify();
                 if (((right == left.args.at(0)))&&((right == left.args.at(1)))) {
-                    return right;
+                    return right.setBeingCompound(is_compound_predicate);
                 } else if ((right == left.args.at(0))) {
-                    return ltlf::And(right, left.args.at(1));
+                    return ltlf::And(right, left.args.at(1)).setBeingCompound(is_compound_predicate);
                 } else if ((right == left.args.at(1))) {
-                    return ltlf::And(right, left.args.at(0));
+                    return ltlf::And(right, left.args.at(0)).setBeingCompound(is_compound_predicate);
                 } else {
                     return *this;
                 }
@@ -583,23 +592,23 @@ struct ltlf ltlf::simplify() const {
                 if (((left == right.args.at(0)))&&((left == right.args.at(1)))) {
                     return left;
                 } else if ((left == right.args.at(0))) {
-                    return ltlf::And(left, right.args.at(1));
+                    return ltlf::And(left, right.args.at(1)).setBeingCompound(is_compound_predicate);
                 } else if ((left == right.args.at(1))) {
-                    return ltlf::And(left, right.args.at(0));
+                    return ltlf::And(left, right.args.at(0)).setBeingCompound(is_compound_predicate);
                 } else {
                     return *this;
                 }
             } else {
-                return ltlf::And(left, right);
+                return ltlf::And(left, right).setBeingCompound(is_compound_predicate);
             }
         }
         case NEXT: {
-            return ltlf::Next(args.at(0).simplify());
+            return ltlf::Next(args.at(0).simplify()).setBeingCompound(is_compound_predicate);
         }
         case UNTIL:
-            return ltlf::Until(args.at(0).simplify(), args.at(1).simplify());
+            return ltlf::Until(args.at(0).simplify(), args.at(1).simplify()).setBeingCompound(is_compound_predicate);
         case RELEASE:
-            return ltlf::Release(args.at(0).simplify(), args.at(1).simplify());
+            return ltlf::Release(args.at(0).simplify(), args.at(1).simplify()).setBeingCompound(is_compound_predicate);
 
         default:
             return {*this};
@@ -614,38 +623,42 @@ struct ltlf ltlf::simplify() const {
 
 
 struct ltlf ltlf::negate() const {
+    if (is_compound_predicate) {
+        int i = 0;
+        i++;
+    }
     switch (casusu) {
         case ACT: {
             struct ltlf curr = *this;
             curr.is_negated = !curr.is_negated;
-            return curr;
+            return curr.setBeingCompound(is_compound_predicate);
         }
         case NUMERIC_ATOM: {
             DataPredicate local = numeric_atom;
             switch (numeric_atom.casusu) {
                 case LT:
                     local.casusu = GEQ;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case GT:
                     local.casusu = LEQ;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case GEQ:
                     local.casusu = LT;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case LEQ:
                     local.casusu = GT;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case EQ:
                     local.casusu = NEQ;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case NEQ:
                     local.casusu = EQ;
-                    return ltlf::Interval(local);
+                    return ltlf::Interval(local).setBeingCompound(is_compound_predicate);
 
                 case INTERVAL: {
                     ltlf formula = ltlf::True().negate();
@@ -698,22 +711,26 @@ struct ltlf ltlf::negate() const {
                         }
                     }
 
-                    return formula;
+                    return formula.setBeingCompound(is_compound_predicate);
                 }
             }
         }
         case NEG_OF:
-            return args.at(0).simplify();
+            if (args.at(0).casusu == NEG_OF)
+                return args.at(0).args.at(0).nnf();
+            else
+                return args.at(0).simplify();
         case OR:
-            return And(args.at(0).negate(), args.at(1).negate());
+            return And(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case AND:
-            return Or(args.at(0).negate(), args.at(1).negate());
+            return Or(args.at(0).negate(), args.at(1).negate())
+            .setBeingCompound(is_compound_predicate);
         case NEXT:
-            return Next(args.at(0).negate());
+            return Next(args.at(0).negate()).setBeingCompound(is_compound_predicate);
         case UNTIL:
-            return Release(args.at(0).negate(), args.at(1).negate());
+            return Release(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case RELEASE:
-            return Until(args.at(0).negate(), args.at(1).negate());
+            return Until(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case TRUE:
             return {FALSE};
         case FALSE:
@@ -726,17 +743,20 @@ struct ltlf ltlf::negate() const {
 struct ltlf ltlf::nnf() const {
     switch (casusu) {
         case NEG_OF:
-            return args.at(0).negate();
+            if (args.at(0).casusu == NEG_OF)
+                return args.at(0).args.at(0).nnf();
+            else
+                return args.at(0).negate();
         case OR:
-            return Or(args.at(0).nnf(), args.at(1).nnf());
+            return Or(args.at(0).nnf(), args.at(1).nnf()).setBeingCompound(is_compound_predicate);
         case AND:
-            return And(args.at(0).nnf(), args.at(1).nnf());
+            return And(args.at(0).nnf(), args.at(1).nnf()).setBeingCompound(is_compound_predicate);
         case NEXT:
-            return Next(args.at(0).nnf());
+            return Next(args.at(0).nnf()).setBeingCompound(is_compound_predicate);
         case UNTIL:
-            return Until(args.at(0).nnf(), args.at(1).nnf());
+            return Until(args.at(0).nnf(), args.at(1).nnf()).setBeingCompound(is_compound_predicate);
         case RELEASE:
-            return Release(args.at(0).nnf(), args.at(1).nnf());
+            return Release(args.at(0).nnf(), args.at(1).nnf()).setBeingCompound(is_compound_predicate);
         default:
             return {*this};
     }

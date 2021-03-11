@@ -27,6 +27,7 @@
 #include <string>
 #include <variant>
 #include <ostream>
+#include <vector>
 
 namespace std {
     template <>
@@ -59,11 +60,13 @@ enum numeric_atom_cases {
 std::string prev_char(const std::string& val, size_t max_size);
 std::string next_char(const std::string& val, size_t max_size);
 
-#define     prev_double(x_val)  (std::nextafter((x_val), -DBL_MAX))
-#define     next_double(x_val)  (std::nextafter((x_val),  DBL_MAX))
+#define     PREV_DOUBLE(x_val)  (std::nextafter((x_val), -DBL_MAX))
+#define     NEXT_DOUBLE(x_val)  (std::nextafter((x_val),  DBL_MAX))
 
-#define MAXIMUM_STRING_LENGTH       (1000)
+#define MAXIMUM_STRING_LENGTH       (10)
 
+#define     PREV_STRING(str)    (prev_char((str), MAXIMUM_STRING_LENGTH))
+#define     NEXT_STRING(str)    (next_char((str), MAXIMUM_STRING_LENGTH))
 
 struct DataPredicate {
     static double      MIN_DOUBLE;
@@ -76,10 +79,15 @@ struct DataPredicate {
     numeric_atom_cases                casusu;
     std::variant<std::string, double> value;
     std::variant<std::string, double> value_upper_bound;
-    std::unordered_set<std::variant<std::string, double>> exceptions;
+    std::set<std::variant<std::string, double>> exceptions;
 
     static std::variant<std::string, double> prev_of(const std::variant<std::string, double>& x);
     static std::variant<std::string, double> next_of(const std::variant<std::string, double>& x);
+
+    bool isStringPredicate() const;
+    bool isDoublePredicate() const;
+    std::variant<std::vector<std::pair<std::string, std::string>>,
+                 std::vector<std::pair<double, double>>> decompose_into_intervals() const;
 
     DataPredicate();
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::variant<std::string, double> &value);
