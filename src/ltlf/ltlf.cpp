@@ -723,8 +723,7 @@ struct ltlf ltlf::negate() const {
         case OR:
             return And(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case AND:
-            return Or(args.at(0).negate(), args.at(1).negate())
-            .setBeingCompound(is_compound_predicate);
+            return Or(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case NEXT:
             return Next(args.at(0).negate()).setBeingCompound(is_compound_predicate);
         case UNTIL:

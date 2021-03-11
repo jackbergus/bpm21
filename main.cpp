@@ -45,6 +45,7 @@ void test_data_predicate() {
 }
 
 #include <structures/query_interval_set.h>
+#include <utils/structures/set_operations.h>
 
 struct DoublePrevNext  {
     double getPrev(double elem) const {
@@ -119,8 +120,8 @@ struct string_interval_tree_t : public segment_partition_tree<std::string, Strin
 
 using label_var_atoms_map_t = std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_set<DataPredicate>>>;
 using label_set_t = std::unordered_set<std::string>;
-using double_intervals_map_t = std::unordered_map<std::pair<std::string, std::string>, double_interval_tree_t>;
-using string_intervals_map_t = std::unordered_map<std::pair<std::string, std::string>, string_interval_tree_t>;
+using double_intervals_map_t = std::unordered_map<std::string, std::unordered_map<std::string, double_interval_tree_t>>;
+using string_intervals_map_t = std::unordered_map<std::string, std::unordered_map<std::string, string_interval_tree_t>>;
 
 
 void pipeline_scratch(const ltlf& formula,
@@ -147,13 +148,13 @@ void pipeline_scratch(const ltlf& formula,
             map[formula.numeric_atom.label][formula.numeric_atom.var].insert(formula.numeric_atom);
             if (formula.numeric_atom.isStringPredicate()) {
                 auto  V = std::get<0>(formula.numeric_atom.decompose_into_intervals());
-                auto& D = string_intervals[std::make_pair(formula.numeric_atom.label,
-                                                          formula.numeric_atom.var)].bulk_insertion;
+                auto& D = string_intervals[formula.numeric_atom.label]
+                                          [formula.numeric_atom.var].bulk_insertion;
                 D.insert(D.end(), V.begin(), V.end());
             } else {
                 auto  V = std::get<1>(formula.numeric_atom.decompose_into_intervals());
-                auto& D = double_intervals[std::make_pair(formula.numeric_atom.label,
-                                                          formula.numeric_atom.var)].bulk_insertion;
+                auto& D = double_intervals[formula.numeric_atom.label]
+                                          [formula.numeric_atom.var].bulk_insertion;
                 D.insert(D.end(), V.begin(), V.end());
             }
             break;
@@ -171,22 +172,68 @@ int main() {
     DeclareModelParse mp;
     std::ifstream stream ("test_file.txt");
     std::cout << "Parsing the file, and putting it in NNF, and simplifying it!" << std::endl;
-    ltlf formula = mp.load_model_to_semantics(stream).nnf();
+    ltlf formula = mp.load_model_to_semantics(stream).nnf().simplify().reduce().oversimplify();
     std::cout << formula << std::endl;
 
-    exit(0);
     label_var_atoms_map_t map1;
     label_set_t           act_universe;
+    label_set_t           act_atoms;
     double_intervals_map_t  double_map;
     string_intervals_map_t  string_map;
     std::cout << "Collecting the atoms from the formula" << std::endl;
     pipeline_scratch(formula, map1, act_universe, double_map, string_map);
 
-    std::cout << "Generating the distinct intervals from the elements" << std::endl;
-    for (auto& ref : double_map)
-        ref.second.perform_insertion();
-    for (auto& ref : string_map)
-        ref.second.perform_insertion();
+    std::cout << "Collecting the atoms associated to no interval" << std::endl;
+    for (const auto& act : act_universe) {
+        auto it1 = double_map.find(act);
+        bool test1 = (it1 == double_map.end()) || (!it1->second.empty());
+        auto it2 = string_map.find(act);
+        bool test2 = (it2 == string_map.end()) || (!it2->second.empty());
+        if (test1 && test2) {
+            act_atoms.insert(act);
+        }
+    }
+
+    if ((!double_map.empty()) || (!(string_map.empty()))) {
+        std::cout << "Generating the distinct intervals from the elements" << std::endl;
+        std::unordered_map<std::string, std::vector<std::vector<DataPredicate>>> interval_map;
+        for (auto ref = string_map.begin(); ref != string_map.cend(); ){
+            for (auto& ref2 : ref->second) {
+                std::vector<DataPredicate> result;
+                ref2.second.perform_insertion();
+                for (const auto& I : ref2.second.collect_intervals()) {
+                    result.emplace_back(ref->first, ref2.first, I.first, I.second);
+                }
+                interval_map[ref->first].emplace_back(result);
+            }
+            ref = string_map.erase(ref);
+        }
+        std::cout << std::setprecision(50);
+        for (auto ref = double_map.begin(); ref != double_map.cend(); ){
+            for (auto& ref2 : ref->second) {
+                std::vector<DataPredicate> result;
+                ref2.second.perform_insertion();
+                for (const auto& I : ref2.second.collect_intervals()) {
+                    result.emplace_back(ref->first, ref2.first, I.first, I.second);
+                }
+                interval_map[ref->first].emplace_back(result);
+            }
+            ref = double_map.erase(ref);
+        }
+
+        std::cout << "Generating the interval composition box" << std::endl;
+        for (auto& ref: interval_map) {
+            std::vector<std::vector<DataPredicate>> W;
+            for (const auto& v : cartesian_product(ref.second)) {
+                std::vector<DataPredicate> V;
+                V.insert(V.end(), v.begin(), v.end());
+                W.emplace_back(V);
+            }
+            ref.second = W;
+        }
+    }
+
+
 #else
     std::string prev = PREV_STRING("");
     std::string next = NEXT_STRING("");

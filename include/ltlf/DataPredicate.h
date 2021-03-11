@@ -95,6 +95,8 @@ struct DataPredicate {
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const double &value);
     DataPredicate(const DataPredicate& ) = default;
     DataPredicate(DataPredicate&& ) = default;
+    DataPredicate(const std::string& label, const std::string& var, double lb, double ub);
+    DataPredicate(const std::string& label, const std::string& var, const std::string& lb, const std::string& ub);
     DataPredicate& operator=(const DataPredicate&) = default;
     DataPredicate& operator=(DataPredicate&&) = default;
 

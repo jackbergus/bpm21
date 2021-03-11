@@ -99,6 +99,25 @@ std::ostream& operator<<(std::ostream& os, const std::unordered_set<T> &s)
     return os << '}';
 }
 
+#include <vector>
+
+template <typename T>
+std::unordered_set<std::unordered_set<T>> cartesian_product(const std::vector<std::vector<T>> & v ) {
+    const long long N = accumulate( v.begin(), v.end(), 1LL, []( long long a, const std::vector<T>& b ) { return a*b.size(); } );
+    std::unordered_set<std::unordered_set<T>> result;
+    for( long long n=0 ; n<N ; ++n ) {
+        lldiv_t q { n, 0 };
+        std::unordered_set<T> u;
+        for( long long i=v.size()-1 ; 0<=i ; --i ) {
+            q = div( q.quot, v[i].size() );
+            u.insert(v[i][q.rem]);
+            //u[i] = v[i][q.rem];
+        }
+        result.insert(u);
+    }
+    return result;
+}
+/*
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T> &s)
 {
@@ -107,7 +126,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T> &s)
         os << i << ", ";
     }
     return os << ']';
-}
+}*/
 
 
 #endif //INCONSISTENCY_DETECTOR_SET_OPERATIONS_H

@@ -458,3 +458,14 @@ std::variant<std::vector<std::pair<std::string, std::string>>,
             return result;
     }
 }
+
+DataPredicate::DataPredicate(const std::string &label, const std::string &var, double lb, double ub) : label{label}, var{var}, casusu{INTERVAL} {
+    value = lb;
+    value_upper_bound = ub;
+}
+
+DataPredicate::DataPredicate(const std::string &label, const std::string &var, const std::string &lb,
+                             const std::string &ub) : label{label}, var{var}, casusu{INTERVAL} {
+    value = lb;
+    value_upper_bound = ub;
+}

@@ -54,6 +54,20 @@ template <typename T> struct node_recur {
     bool operator>=(const node_recur &rhs) const { return !(*this < rhs);  }
     bool operator!=(const node_recur &rhs) const { return !(rhs == *this); }
 
+    void collect_intervals(std::unordered_set<std::pair<T,T>>& S) const {
+        if ((children.empty()) || isPointed) {
+            if ((!onlyForPointed.empty())) {
+                for (const node_recur<T>& ref : onlyForPointed)
+                    ref.collect_intervals(S);
+            } else {
+                S.emplace(min, max);
+            }
+        }
+
+        for (const node_recur<T>& ref : children)
+            ref.collect_intervals(S);
+    }
+
     void print(std::ostream &os, unsigned int pad = 0) const {
         for (size_t i = 0; i<pad; i++) os << "..";
         os << '[' << min << ',' << max << ']' << /*(children.empty() ? " **" : "") << */(isPointed ? ("<" + std::to_string(isPointed) +"<") : "");
