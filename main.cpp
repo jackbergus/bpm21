@@ -84,7 +84,7 @@ struct double_interval_tree_t : public segment_partition_tree<double, DoublePrev
         /*for (const auto& i : bulk_insertion) {
             std::cout << i << " = " << find_interval(indexer, element, i.first, i.second) << std::endl;
         }*/
-        std::cout << *this << std::endl;
+        //std::cout << *this << std::endl;
     }
 };
 
@@ -124,7 +124,7 @@ struct string_interval_tree_t : public segment_partition_tree<std::string, Strin
         /*for (const auto& i : bulk_insertion) {
             std::cout << i << " = " << find_interval(indexer, element, i.first, i.second) << std::endl;
         }*/
-        std::cout << *this << std::endl;
+        //std::cout << *this << std::endl;
     }
 };
 
@@ -183,6 +183,7 @@ struct input_pipeline {
     label_set_t           act_atoms;
     double_intervals_map_t  double_map;
     string_intervals_map_t  string_map;
+    ltlf model;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 
@@ -227,6 +228,7 @@ struct input_pipeline {
 
     input_pipeline(const std::string& fresh_atom_label) : fresh_atom_label{fresh_atom_label} {
         count_fresh_atoms = 1;
+        model = ltlf::True();
     }
 
     std::string generate_fresh_atom() {
@@ -237,6 +239,8 @@ struct input_pipeline {
         init_pipeline(file);
         if ((!double_map.empty()) || (!(string_map.empty()))) {
             decompose_and_atomize();
+            ltlf atomized_model = setInterpretCompoundSubatom(model);
+            std::cout << "Atomized = " << atomized_model << std::endl;
         }
     }
 
@@ -254,14 +258,18 @@ struct input_pipeline {
                 S.insert(clause_to_atomization_map.at(cp));
             }
         }
-        return isNegated ? unordered_difference(act_universe, S) : S;
+        return isNegated ? unordered_difference(atom_universe, S) : S;
     }
 
     semantic_atom_set interval_decomposition(const DataPredicate& pred, bool isNegated = false) {
         semantic_atom_set S;
         if (pred.isStringPredicate()) {
-            for (const auto& cp : std::get<0>(pred.decompose_into_intervals())) {
-                for (const auto& I : string_map.at(pred.label).at(pred.var).findInterval(cp.first, cp.second)) {
+            const auto V = std::get<0>(pred.decompose_into_intervals());
+            auto& ref = string_map.at(pred.label).at(pred.var);
+            for (const auto& cp : V) {
+                /*assert(string_map.contains(pred.label));
+                assert(string_map.at(pred.label).contains(pred.var));*/
+                for (const auto& I : ref.findInterval(cp.first, cp.second)) {
                     DataPredicate dp{pred.label, pred.var, I.first, I.second};
                     assert(Mcal.contains(dp));
                     auto v = Mcal.at(dp);
@@ -269,8 +277,12 @@ struct input_pipeline {
                 }
             }
         } else {
-            for (const auto& cp : std::get<1>(pred.decompose_into_intervals())) {
-                for (const auto& I : double_map.at(pred.label).at(pred.var).findInterval(cp.first, cp.second)) {
+            const auto V = std::get<1>(pred.decompose_into_intervals());
+            auto& ref = double_map.at(pred.label).at(pred.var);
+            for (const auto& cp : V) {
+                /*assert(double_map.contains(pred.label));
+                assert(double_map.at(pred.label).contains(pred.var));*/
+                for (const auto& I : ref.findInterval(cp.first, cp.second)) {
                     DataPredicate dp{pred.label, pred.var, I.first, I.second};
                     assert(Mcal.contains(dp));
                     auto v = Mcal.at(dp);
@@ -278,7 +290,7 @@ struct input_pipeline {
                 }
             }
         }
-        return isNegated ? unordered_difference(act_universe, S) : S;
+        return isNegated ? unordered_difference(atom_universe, S) : S;
     }
 
     ltlf setInterpretCompoundSubatom(const ltlf& formula) {
@@ -369,10 +381,12 @@ private:
             case NUMERIC_ATOM: {
                 auto atom = formula.numeric_atom;
                 atom.asInterval();
+                std::cout << "DEBUG = " << formula.numeric_atom << " ~= " << atom << std::endl;
                 assert(!formula.is_negated);
                 return interval_decomposition(atom, formula.is_negated);
             }
         }
+        assert(false);
     }
 
     size_t count_fresh_atoms;
@@ -380,7 +394,7 @@ private:
     void decompose_and_atomize() {
         std::cout << "Generating the distinct intervals from the elements" << std::endl;
 
-        for (auto ref = string_map.begin(); ref != string_map.cend(); ){
+        for (auto ref = string_map.begin(); ref != string_map.cend(); ref++){
             for (auto& ref2 : ref->second) {
                 std::vector<DataPredicate> result;
                 ref2.second.perform_insertion();
@@ -389,10 +403,9 @@ private:
                 }
                 interval_map[ref->first].emplace_back(result);
             }
-            ref = string_map.erase(ref);
         }
         //std::cout << std::setprecision(50);
-        for (auto ref = double_map.begin(); ref != double_map.cend(); ){
+        for (auto ref = double_map.begin(); ref != double_map.cend(); ref++){
             for (auto& ref2 : ref->second) {
                 std::vector<DataPredicate> result;
                 ref2.second.perform_insertion();
@@ -401,7 +414,6 @@ private:
                 }
                 interval_map[ref->first].emplace_back(result);
             }
-            ref = double_map.erase(ref);
         }
 
         std::cout << "Generating the interval composition box" << std::endl;
@@ -429,11 +441,11 @@ private:
         std::ifstream stream (file);
 
         std::cout << "Parsing the file, and putting it in NNF, and simplifying it!" << std::endl;
-        ltlf formula = mp.load_model_to_semantics(stream).nnf().simplify().reduce().oversimplify();
-        std::cout << formula << std::endl;
+        model = mp.load_model_to_semantics(stream).nnf().simplify().reduce().oversimplify();
+        std::cout << "Model = " <<  model << std::endl;
 
         std::cout << "Collecting the atoms from the formula" << std::endl;
-        pipeline_scratch(formula, map1, act_universe, double_map, string_map);
+        pipeline_scratch(model, map1, act_universe, double_map, string_map);
 
         std::cout << "Collecting the atoms associated to no interval" << std::endl;
         for (const auto& act : act_universe) {
