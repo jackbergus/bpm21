@@ -27,6 +27,7 @@
 #define CUCCIOLO_NODE_RECUR_H
 
 #include <utils/stream_out.h>
+#include <utils/numeric/uset_hash.h>
 
 template <typename T> struct node_recur {
     T min, max;         //<@ Storing the interval information

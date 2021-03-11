@@ -28,6 +28,7 @@
 
 #include <structures/query_interval_set/algorithms/find_interval.h>
 #include <utils/removeIndicesFromVector.h>
+#include <stack>
 
 /**
  * This function minimizes the interval tree by finding the elements that are not pointed by any query interval and

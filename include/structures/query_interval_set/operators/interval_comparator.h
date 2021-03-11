@@ -26,6 +26,8 @@
 #ifndef CUCCIOLO_INTERVAL_COMPARATOR_H
 #define CUCCIOLO_INTERVAL_COMPARATOR_H
 
+#include <utility>
+
 /**
  * This struct orders the query intervals from the smaller to the larger, and orders the intervals with the same length
  * as usual

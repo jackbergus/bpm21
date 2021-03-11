@@ -18,7 +18,7 @@ set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
                   antlr4/cpp/antlr4/DADListener.cpp
                   antlr4/cpp/antlr4/DADParser.cpp
                   antlr4/cpp/antlr4/DADVisitor.cpp
-                  )
+        src/pipeline/DoublePrevNext.cpp include/pipeline/DoublePrevNext.h src/pipeline/double_interval_tree_t.cpp include/pipeline/double_interval_tree_t.h src/pipeline/StringPrevNext.cpp include/pipeline/StringPrevNext.h src/pipeline/string_interval_tree_t.cpp include/pipeline/string_interval_tree_t.h src/pipeline/pipeline_utils.cpp include/pipeline/pipeline_utils.h src/pipeline/input_pipeline.cpp include/pipeline/input_pipeline.h)
 
 add_executable(bpm21
         main.cpp
