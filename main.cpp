@@ -450,6 +450,18 @@ private:
 
 };
 
+struct IntPrevNext  {
+    size_t getPrev(size_t elem) const {
+        return (elem == 0) ? elem : (elem-1);
+    }
+    size_t getNext(size_t elem) const {
+        return (elem == std::numeric_limits<size_t>::max()) ? elem : elem+1;
+    }
+    size_t distance(size_t l, size_t r) const {
+        return std::labs(l-r);
+    }
+};
+
 int main() {
 
 #if 1
@@ -461,10 +473,13 @@ int main() {
     f.close();
 
 #else
-    std::string prev = PREV_STRING("");
-    std::string next = NEXT_STRING("");
-    std::cout << prev << std::endl;
-    std::cout << next << std::endl;
+    segment_partition_tree<size_t, IntPrevNext> S(0, 10);
+    insert_interval(S.indexer, S.element, 0UL, 10UL);
+    insert_interval(S.indexer, S.element, 0UL, 4UL);
+    insert_interval(S.indexer, S.element, 5UL, 5UL);
+    insert_interval(S.indexer, S.element, 6UL, 10UL);
+    minimize_tree(S.indexer, S.element);
+    std::cout << S << std::endl;
 #endif
 
 }

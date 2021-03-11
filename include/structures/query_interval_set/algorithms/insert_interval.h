@@ -49,7 +49,7 @@ std::vector<std::pair<T,T>> insert_interval(const PrevNext& indexer, struct node
         if (it->children.empty()) {// If there is no other interval, use the thrichotomy
             //std::cout << stackElement << ": thrichotomy" << std::endl;
             T nextToLeft = indexer.getPrev(currentLeft);
-            if (it->min <= nextToLeft)
+            if ((it->min < nextToLeft))
                 it->children.emplace_back(it->min, nextToLeft);
             // This is the actual interval to which I am interested on!
             it->children.emplace_back(currentLeft, currentRight);
@@ -57,7 +57,7 @@ std::vector<std::pair<T,T>> insert_interval(const PrevNext& indexer, struct node
             size_t offset = it->children.size()-1;
             ///std::cout << " ~~ for current (1): " << it->children[offset] << std::endl;
             T nextToRight = indexer.getNext(currentRight);
-            if (it->max >= nextToRight)
+            if (it->max > nextToRight)
                 it->children.emplace_back(nextToRight, it->max);
             // Returning the interesting interval
             it->children[offset].isPointed++;
