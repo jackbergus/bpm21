@@ -27,6 +27,7 @@
 #define BPM21_INPUT_PIPELINE_H
 
 #include <pipeline/pipeline_utils.h>
+#include <graphs/third-party-wrappers/lydia_entry_point.h>
 
 struct input_pipeline {
     label_var_atoms_map_t map1;
@@ -35,6 +36,8 @@ struct input_pipeline {
     double_intervals_map_t  double_map;
     string_intervals_map_t  string_map;
     ltlf model;
+
+    lydia_entry_point     lydia_ep;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 

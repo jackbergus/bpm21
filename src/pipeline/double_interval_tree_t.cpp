@@ -37,13 +37,12 @@ void double_interval_tree_t::perform_insertion() {
     // Inserting one interval at a time
     bulk_insertion.erase( unique( bulk_insertion.begin(), bulk_insertion.end() ), bulk_insertion.end() );
     for (const auto& i : bulk_insertion) {
-        /*std::cout << i << " = "<< */ insert_interval(this->indexer, this->element, i.first, i.second) /*<< std::endl*/;
-        ///std::cout << tree << std::endl;
-        ///std::cout << std::endl;
+        insert_interval(this->indexer, this->element, i.first, i.second);
+
     }
     minimize_tree<double, DoublePrevNext>(indexer, element);
     /*for (const auto& i : bulk_insertion) {
         std::cout << i << " = " << find_interval(indexer, element, i.first, i.second) << std::endl;
     }*/
-    //std::cout << *this << std::endl;
+    /*std::cout << *this << std::endl;*/
 }

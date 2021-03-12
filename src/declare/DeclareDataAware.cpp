@@ -115,7 +115,7 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
                 return ltlf::Diamond(left).negate();
             }
         case Absence:
-            return ltlf::Neg(doExistence(n, left_act, dnf_left_map).toFiniteSemantics());
+            return ltlf::Neg(doExistence(1, left_act, dnf_left_map).toFiniteSemantics());
 
         case Exactly:
             return ltlf::And(doExistence(n, left_act, dnf_left_map).toFiniteSemantics(), doAbsence(n + 1, left_act, dnf_left_map).toFiniteSemantics());

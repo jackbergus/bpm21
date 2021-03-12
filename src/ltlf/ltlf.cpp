@@ -623,10 +623,6 @@ struct ltlf ltlf::simplify() const {
 
 
 struct ltlf ltlf::negate() const {
-    if (is_compound_predicate) {
-        int i = 0;
-        i++;
-    }
     switch (casusu) {
         case ACT: {
             struct ltlf curr = *this;

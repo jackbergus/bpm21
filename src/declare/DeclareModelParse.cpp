@@ -190,13 +190,14 @@ antlrcpp::Any DeclareModelParse::visitNeq(DADParser::NeqContext *ctx) {
 ltlf DeclareModelParse::load_model_to_semantics(std::ifstream &stream) {
     ltlf formula = ltlf::True();
     std::vector<DeclareDataAware> V = load(stream);
-    size_t i = 0, N = V.size();
+    bool first = true;
     for (const DeclareDataAware& x : V) {
-        if (i == 0) {
-            formula = x.toFiniteSemantics();
-            i++;
-        } else
-            formula = ltlf::And(x.toFiniteSemantics(), formula);
+        if (first) {
+            formula = x.toFiniteSemantics().simplify().reduce().oversimplify();
+            first = false;
+        } else {
+            formula = ltlf::And(x.toFiniteSemantics().simplify().reduce().oversimplify(), formula);
+        }
     }
     return formula;
 }

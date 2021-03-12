@@ -27,6 +27,8 @@
 #define CUCCIOLO_FIND_INTERVALS_H
 
 #include <structures/query_interval_set/algorithms/insert_interval.h>
+#include <utils/numeric/pair_hash.h>
+#include <unordered_set>
 
 template <typename T, typename PrevNext>
 std::vector<std::pair<T,T>> find_interval(const PrevNext& indexer, struct node_recur<T>& element, T left, T right) {
@@ -54,7 +56,9 @@ std::vector<std::pair<T,T>> find_interval(const PrevNext& indexer, struct node_r
         } else {
             for (size_t i = 0; i<N; i++) {
                 if ((list_ptr[i].min == currentLeft) && (list_ptr[i].max == currentRight)) {
-                    result.emplace_back(currentLeft, currentRight);
+                    std::unordered_set<std::pair<T,T>> S;
+                    list_ptr[i].collect_intervals(S);
+                    result.insert(result.end(), S.begin(), S.end());
                 } else if (list_ptr[i].max < currentLeft) {
                     continue;
                 } else if (list_ptr[i].min <= currentLeft) {
@@ -80,35 +84,5 @@ std::vector<std::pair<T,T>> find_interval(const PrevNext& indexer, struct node_r
     return result;
 }
 
-/*
-template <typename T, typename PrevNext>
-std::vector<std::pair<T,T>> getIntervals(const PrevNext& indexer, struct node_recur<T>& element) {
-    std::stack<node_recur<T>*> ptr;
-    ptr.emplace(&element);
-    std::vector<std::pair<T,T>> result;
-
-    while (!ptr.empty()) {
-        node_recur<T>* top = ptr.top();
-        ptr.pop();
-        for (const auto& x : top->onlyForPointed)
-            if ((x.min >= element.min) && (x.max <= element.max))
-                result.emplace_back(x.min, x.max);
-        if (!top->children.empty()) {
-            for (size_t i = 0, N = top->children.size(); i<N; i++) {
-                ptr.push(&top->children.at(i));
-            }
-        } else {
-            if ((top->min >= element.min) && (top->max <= element.max))
-                result.emplace_back(top->min, top->max);
-        }
-    }
-    std::sort(result.begin(), result.end());
-    std::vector<std::vector<std::pair<T, T>>> mergeSet;
-    findMergeSets(indexer, result, mergeSet);
-
-    std::cout << mergeSet << std::endl;
-
-    return result;
-}*/
 
 #endif //CUCCIOLO_FIND_INTERVALS_H

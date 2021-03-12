@@ -25,6 +25,12 @@
 
 #include <declare/DeclareModelParse.h>
 #include "pipeline/input_pipeline.h"
+#ifdef TRUE
+#undef TRUE
+#endif
+#ifdef FALSE
+#undef FALSE
+#endif
 
 void input_pipeline::print_sigma(std::ostream &os) {
     os << "Sigma " << std::endl << std::endl;
@@ -69,12 +75,17 @@ std::string input_pipeline::generate_fresh_atom() {
 }
 
 void input_pipeline::run_pipeline(const std::string &file) {
+    ltlf model_to_render_as_graph = model;
     init_pipeline(file);
+
     if ((!double_map.empty()) || (!(string_map.empty()))) {
         decompose_and_atomize();
-        ltlf atomized_model = setInterpretCompoundSubatom(model);
-        std::cout << "Atomized = " << atomized_model << std::endl;
+        model_to_render_as_graph = setInterpretCompoundSubatom(model);
+        std::cout << "Atomized = " << model_to_render_as_graph << std::endl;
     }
+
+    auto Lformula = lydia_ep.convert_formula_from_objects(model_to_render_as_graph);
+    auto map = lydia_ep.generate_map(Lformula, "graph.pdf");
 }
 
 input_pipeline::semantic_atom_set input_pipeline::atom_decomposition(const std::string &act, bool isNegated) {
@@ -100,8 +111,6 @@ input_pipeline::semantic_atom_set input_pipeline::interval_decomposition(const D
         const auto V = std::get<0>(pred.decompose_into_intervals());
         auto& ref = string_map.at(pred.label).at(pred.var);
         for (const auto& cp : V) {
-            /*assert(string_map.contains(pred.label));
-            assert(string_map.at(pred.label).contains(pred.var));*/
             for (const auto& I : ref.findInterval(cp.first, cp.second)) {
                 DataPredicate dp{pred.label, pred.var, I.first, I.second};
                 assert(Mcal.contains(dp));
@@ -113,8 +122,6 @@ input_pipeline::semantic_atom_set input_pipeline::interval_decomposition(const D
         const auto V = std::get<1>(pred.decompose_into_intervals());
         auto& ref = double_map.at(pred.label).at(pred.var);
         for (const auto& cp : V) {
-            /*assert(double_map.contains(pred.label));
-            assert(double_map.at(pred.label).contains(pred.var));*/
             for (const auto& I : ref.findInterval(cp.first, cp.second)) {
                 DataPredicate dp{pred.label, pred.var, I.first, I.second};
                 assert(Mcal.contains(dp));
@@ -128,10 +135,37 @@ input_pipeline::semantic_atom_set input_pipeline::interval_decomposition(const D
 
 ltlf input_pipeline::setInterpretCompoundSubatom(const ltlf &formula) {
     if (formula.is_compound_predicate) {
-        return extractLtlfFormulaFromSubAtoms(formula).setBeingCompound(true);
-    } else {
         switch (formula.casusu) {
             case ACT:
+                assert(act_atoms.contains(formula.act));
+                return formula;
+            case OR: {
+                assert(formula.args.at(0).is_negated);
+                semantic_atom_set left= atom_decomposition(formula.args.at(0).act);
+                {
+                    semantic_atom_set right= _setInterpretCompoundSubatom(formula.args.at(1));
+                    left = unordered_difference(left, right);
+                }
+                auto right = extractLtlfFormulaFromSubAtoms(formula.args.at(1));
+                for (const std::string& act : left) {
+                    right = ltlf::Or(ltlf::Act(act).negate(), right);
+                }
+                return right;
+            }
+            case AND:
+                return extractLtlfFormulaFromSubAtoms(formula).setBeingCompound(true);
+            default:
+                std::cerr << "Unexpected case: " << formula << std::endl;
+                throw std::runtime_error("Unexpected case");
+        }
+    } else {
+        switch (formula.casusu) {
+            case ACT: {
+                if (act_atoms.contains(formula.act))
+                    return formula;
+                else
+                    return extractLtlfFormulaFromSubAtoms(formula);
+            }
             case NUMERIC_ATOM:
                 return extractLtlfFormulaFromSubAtoms(formula);
 
@@ -213,7 +247,7 @@ input_pipeline::semantic_atom_set input_pipeline::_setInterpretCompoundSubatom(c
         case NUMERIC_ATOM: {
             auto atom = formula.numeric_atom;
             atom.asInterval();
-            std::cout << "DEBUG = " << formula.numeric_atom << " ~= " << atom << std::endl;
+            //std::cout << "DEBUG = " << formula.numeric_atom << " ~= " << atom << std::endl;
             assert(!formula.is_negated);
             return interval_decomposition(atom, formula.is_negated);
         }

@@ -29,6 +29,13 @@
 
 #include <unordered_set>
 
+#ifdef TRUE
+#undef TRUE
+#endif
+#ifdef FALSE
+#undef FALSE
+#endif
+
 enum formula_t {
     ACT,
     NEG_OF,

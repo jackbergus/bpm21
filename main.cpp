@@ -43,30 +43,31 @@ void test_data_predicate() {
     std::cout << x_1 << std::endl;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int main() {
 
 #if 1
-    input_pipeline Pip{"fa"};
-    Pip.run_pipeline("test_file.txt");
+    /*{
+        input_pipeline Pip{"fa"};
+        Pip.run_pipeline("test_file.txt");
+        std::ofstream f{"sigma.txt"};
+        Pip.print_sigma(f);
+        f.close();
+    }*/
+    {
+        input_pipeline Pip{"fa"};
+        Pip.run_pipeline("ex_1.txt");
+        std::ofstream f{"sigma_1.txt"};
+        Pip.print_sigma(f);
+        f.close();
+    }
+    {
+        input_pipeline Pip{"fa"};
+        Pip.run_pipeline("ex_2.txt");
+        std::ofstream f{"sigma_2.txt"};
+        Pip.print_sigma(f);
+        f.close();
+    }
 
-    std::ofstream f{"sigma.txt"};
-    Pip.print_sigma(f);
-    f.close();
 
 #else
     struct IntPrevNext  {
