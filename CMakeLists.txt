@@ -33,11 +33,17 @@ set(graphs
         src/graphs/minimizeDFA.cpp)
 
 set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
-                  antlr4/cpp/antlr4/DADBaseVisitor.cpp
                   antlr4/cpp/antlr4/DADLexer.cpp
-                  antlr4/cpp/antlr4/DADListener.cpp
                   antlr4/cpp/antlr4/DADParser.cpp
-                  antlr4/cpp/antlr4/DADVisitor.cpp)
+                  antlr4/cpp/antlr4/DADVisitor.cpp
+                  src/declare/DeclareModelParse.cpp
+        antlr4/cpp/antlr4/TracesBaseListener.cpp
+        antlr4/cpp/antlr4/TracesBaseVisitor.cpp
+        antlr4/cpp/antlr4/TracesLexer.cpp
+        antlr4/cpp/antlr4/TracesParser.cpp
+        antlr4/cpp/antlr4/TracesVisitor.cpp
+        src/declare/DataTraceParse.cpp
+        include/declare/DataTraceParse.h)
 
 add_executable(bpm21
         main.cpp
@@ -47,7 +53,7 @@ add_executable(bpm21
 
         src/graphs/third-party-wrappers/lydia_entry_point.cpp
 
-        src/declare/DeclareModelParse.cpp
+
         src/ltlf/PropositionalizedAtomsSet.cpp
         src/utils/numeric/hash_combine.cpp
         src/ltlf/ltlf.cpp include/ltlf/ltlf.h

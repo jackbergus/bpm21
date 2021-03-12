@@ -42,6 +42,7 @@ struct input_pipeline {
     using semantic_atom_set = std::unordered_set<std::string>;
 
     std::string fresh_atom_label;
+    std::unordered_map<std::string, size_t> max_ctam_iteration;
     std::unordered_map<std::pair<std::string, size_t>, std::string> clause_to_atomization_map;
     std::unordered_map<std::string, std::vector<std::vector<DataPredicate>>> interval_map;
     std::unordered_map<DataPredicate, std::vector<std::string>> Mcal;
@@ -49,14 +50,20 @@ struct input_pipeline {
 
     input_pipeline(const std::string& fresh_atom_label);
 
-    void run_pipeline(const std::string& file);
-    ltlf setInterpretCompoundSubatom(const ltlf& formula);
-    ltlf extractLtlfFormulaFromSubAtoms(const ltlf &formula);
+    std::vector<std::vector<std::string>> convert_trace_labels(const std::string& file);
+    std::vector<std::vector<std::string>> toCanonicalTraces(const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>>& data_log);
 
+    void print_equivalence_classes(std::ostream &os);
     void print_sigma(std::ostream& os);
+    void print_atomized_traces(const std::string& input_file, std::ostream& os);
+
+    void run_pipeline(const std::string& file);
 
 private:
     size_t count_fresh_atoms;
+
+    ltlf setInterpretCompoundSubatom(const ltlf& formula);
+    ltlf extractLtlfFormulaFromSubAtoms(const ltlf &formula);
 
     std::string generate_fresh_atom();
 

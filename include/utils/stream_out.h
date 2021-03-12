@@ -7,6 +7,21 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+
+#include <variant>
+#include <string>
+#include <ostream>
+
+
+
+template<typename T, typename V> std::ostream &operator<<(std::ostream &os, const std::unordered_map<T,V> &insertion) {
+    for (const auto& cp : insertion) {
+        os << "{" << cp.first << ": " << cp.second << "}";
+    }
+    return os;
+}
+
 
 template<typename T, typename V> std::ostream &operator<<(std::ostream &os, const std::pair<T,V> &insertion) {
     return os << "⟪" << insertion.first << ", " << insertion.second << "⟫";

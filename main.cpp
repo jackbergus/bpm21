@@ -18,13 +18,15 @@
  * along with bpm21. If not, see <http://www.gnu.org/licenses/>.
  */
 
- 
+
 
 #include <iostream>
 #include <ltlf/DataPredicate.h>
 #include <fstream>
 #include <DADParser.h>
 #include <pipeline/input_pipeline.h>
+
+#include "declare/DataTraceParse.h"
 
 void test_data_predicate() {
     DataPredicate x_1{"x", LT, 0.2};
@@ -43,34 +45,61 @@ void test_data_predicate() {
     std::cout << x_1 << std::endl;
 }
 
+#include <utils/stream_out.h>
+std::ostream &operator<<(std::ostream &os, const std::variant<std::string, double> &insertion) {
+    if (std::holds_alternative<std::string>(insertion))
+        return os << std::get<std::string>(insertion);
+    else
+        return os << std::get<double >(insertion);
+}
+
+
+
 int main() {
 
 #if 1
     /*{
         input_pipeline Pip{"fa"};
-        Pip.run_pipeline("test_file.txt");
-        std::ofstream f{"sigma.txt"};
-        Pip.print_sigma(f);
-        f.close();
+        Pip.run_pipeline("ex_3.txt");
+        {
+            std::ofstream f{"eq_classes_3.txt"};
+            Pip.print_equivalence_classes(f);
+        }
+
     }*/
     {
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_1.txt");
-        std::ofstream f{"sigma_1.txt"};
-        Pip.print_sigma(f);
-        f.close();
+        {
+            std::ofstream f{"eq_classes_1.txt"};
+            Pip.print_equivalence_classes(f);
+        }
+        {
+            std::ofstream f{"log_1_out.txt"};
+            Pip.print_atomized_traces("log_1.txt", f);
+        }
     }
     {
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_2.txt");
-        std::ofstream f{"sigma_2.txt"};
-        Pip.print_sigma(f);
-        f.close();
+        {
+            std::ofstream f{"eq_classes_2.txt"};
+            Pip.print_equivalence_classes(f);
+        }
+        {
+            std::ofstream f{"log_2_out.txt"};
+            Pip.print_atomized_traces("log_2.txt", f);
+        }
     }
 
 
 #else
-    struct IntPrevNext  {
+    DataTraceParse dtp;
+    std::ifstream file{"log_test.txt"};
+
+    for (const auto& trace : dtp.load(file))
+        std::cout << trace <<std::endl;
+    /*struct IntPrevNext  {
     size_t getPrev(size_t elem) const {
         return (elem == 0) ? elem : (elem-1);
     }
@@ -88,7 +117,7 @@ segment_partition_tree<size_t, IntPrevNext> S(0, 10);
     insert_interval(S.indexer, S.element, 5UL, 5UL);
     insert_interval(S.indexer, S.element, 6UL, 10UL);
     minimize_tree(S.indexer, S.element);
-    std::cout << S << std::endl;
+    std::cout << S << std::endl;*/
 #endif
 
 }

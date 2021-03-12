@@ -46,7 +46,7 @@ void input_pipeline::print_sigma(std::ostream &os) {
     for (const auto& k : interval_map) {
         os << "   - " << k.first << std::endl;
         cp.first = k.first;
-        for (size_t i = 0, N = k.second.size(); i<N; i++) {
+        for (size_t i = 0, N = max_ctam_iteration.at(cp.first); i<N; i++) {
             cp.second = i;
             os << "        * "
                << clause_to_atomization_map.at(cp)
@@ -97,7 +97,7 @@ input_pipeline::semantic_atom_set input_pipeline::atom_decomposition(const std::
     } else {
         std::pair<std::string, size_t> cp;
         cp.first = act;
-        for (size_t i = 0, N = it->second.size(); i<N; i++) {
+        for (size_t i = 0, N = max_ctam_iteration.at(act); i<N; i++) {
             cp.second = i;
             S.insert(clause_to_atomization_map.at(cp));
         }
@@ -297,6 +297,7 @@ void input_pipeline::decompose_and_atomize() {
                 Mcal[pred].emplace_back(FA);
             }
         }
+        max_ctam_iteration[ref.first] = W.size();
     }
 }
 
@@ -320,6 +321,105 @@ void input_pipeline::init_pipeline(const std::string &file) {
         if (test1 && test2) {
             act_atoms.insert(act);
             atom_universe.insert(act);
+        }
+    }
+}
+
+void input_pipeline::print_equivalence_classes(std::ostream &os) {
+    std::pair<std::string, size_t> cp;
+    for (const auto& k : interval_map) {
+        cp.first = k.first;
+        std::vector<std::string> uollano;
+        for (size_t i = 0, N = max_ctam_iteration.at(cp.first); i<N; i++) {
+            cp.second = i;
+            uollano.emplace_back(clause_to_atomization_map.at(cp));
+        }
+        for (size_t i = 0, N = uollano.size(); i<N; i++) {
+            auto simi = uollano.at(i);
+            for (size_t j = 0; j<i; j++) {
+                os << simi << " " << uollano.at(j) << std::endl;
+                os << uollano.at(j) << " " << simi << std::endl;
+            }
+        }
+    }
+}
+
+std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
+        const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> &data_log) {
+    std::vector<std::vector<std::string>> formaggino;
+    for (const std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>& trace : data_log) {
+        std::vector<std::string> fantasma;
+        for (const std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>& event : trace) {
+            const std::string& event_label = event.first;
+            if ((!act_universe.contains(event_label)) || (act_atoms.contains(event_label))) {
+                fantasma.emplace_back(event_label);
+            } else {
+                for (const auto& key_value : event.second) {
+                    semantic_atom_set S;
+                    bool first = true;
+                    if (std::holds_alternative<std::string>(key_value.second)) {
+                        auto& ref = string_map.at(event_label).at(key_value.first);
+                        const std::string V = std::get<0>(key_value.second);
+                        for (const auto& I : ref.collect_intervals()) {
+                            DataPredicate dp{event_label, key_value.first, I.first, I.second};
+                            if (dp.test(V)) {
+                                assert(Mcal.contains(dp));
+                                auto v = Mcal.at(dp);
+                                if (first) {
+                                    S.insert(v.begin(), v.end());
+                                    first = false;
+                                } else {
+                                    semantic_atom_set S2;
+                                    S2.insert(v.begin(), v.end());
+                                    S = unordered_intersection(S, S2);
+                                }
+                            }
+                        }
+                    } else {
+                        const double V = std::get<1>(key_value.second);
+                        auto& ref = double_map.at(event_label).at(key_value.first);
+                        for (const auto& I : ref.collect_intervals()) {
+                            DataPredicate dp{event_label, key_value.first, I.first, I.second};
+                            if (dp.test(V)) {
+                                assert(Mcal.contains(dp));
+                                auto v = Mcal.at(dp);
+                                if (first) {
+                                    S.insert(v.begin(), v.end());
+                                    first = false;
+                                } else {
+                                    semantic_atom_set S2;
+                                    S2.insert(v.begin(), v.end());
+                                    S = unordered_intersection(S, S2);
+                                }
+                            }
+                        }
+                    }
+                    assert(S.size() == 1);
+                    fantasma.emplace_back(*S.begin());
+                }
+            }
+        }
+        formaggino.emplace_back(fantasma);
+    }
+    return formaggino;
+}
+
+#include <declare/DataTraceParse.h>
+
+std::vector<std::vector<std::string>> input_pipeline::convert_trace_labels(const std::string &file) {
+    DataTraceParse dtp;
+    std::ifstream f{file};
+    return toCanonicalTraces(dtp.load(f));
+}
+
+void input_pipeline::print_atomized_traces(const std::string &input_file, std::ostream &os) {
+    for (const std::vector<std::string>& atom_trace : convert_trace_labels(input_file)) {
+        for (size_t i = 0, N = atom_trace.size(); i<N; i++) {
+            os << atom_trace.at(i);
+            if (i!= (N-1))
+                os << " ";
+            else
+                os << std::endl;
         }
     }
 }
