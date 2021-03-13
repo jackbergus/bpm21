@@ -95,7 +95,7 @@ public:
     }
 
     void addNewEdgeB(const NodeElement& src, const NodeElement& dst, const EdgeLabel& weight) {
-        addNewEdgeFromId(addUniqueStateOrGetExisting(dst), addUniqueStateOrGetExisting(dst), weight);
+        addNewEdgeFromId(addUniqueStateOrGetExisting(src), addUniqueStateOrGetExisting(dst), weight);
     }
 
     virtual std::vector<std::pair<EdgeLabel, size_t>> outgoingEdges(size_t srcNode) const {
@@ -119,7 +119,7 @@ public:
     }
 
     std::vector<std::pair<EdgeLabel, size_t>> ingoingEdges(const NodeElement& n) const {
-        return ingoingEdges(nodeLabel.at(n));
+        return ingoingEdgesById(nodeLabel.at(n));
     }
 
     std::optional<size_t> hasNode(const NodeElement& node) {

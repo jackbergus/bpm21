@@ -25,6 +25,8 @@
 
 #include <declare/DeclareModelParse.h>
 #include "pipeline/input_pipeline.h"
+#include "pipeline/SimpleXESSerializer.h"
+
 #ifdef TRUE
 #undef TRUE
 #endif
@@ -75,17 +77,14 @@ std::string input_pipeline::generate_fresh_atom() {
 }
 
 void input_pipeline::run_pipeline(const std::string &file) {
-    ltlf model_to_render_as_graph = model;
+    final_model = model;
     init_pipeline(file);
 
     if ((!double_map.empty()) || (!(string_map.empty()))) {
         decompose_and_atomize();
-        model_to_render_as_graph = setInterpretCompoundSubatom(model);
-        std::cout << "Atomized = " << model_to_render_as_graph << std::endl;
+        final_model = setInterpretCompoundSubatom(model);
+        std::cout << "Atomized = " << final_model << std::endl;
     }
-
-    auto Lformula = lydia_ep.convert_formula_from_objects(model_to_render_as_graph);
-    auto map = lydia_ep.generate_map(Lformula, "graph.pdf");
 }
 
 input_pipeline::semantic_atom_set input_pipeline::atom_decomposition(const std::string &act, bool isNegated) {
@@ -136,9 +135,10 @@ input_pipeline::semantic_atom_set input_pipeline::interval_decomposition(const D
 ltlf input_pipeline::setInterpretCompoundSubatom(const ltlf &formula) {
     if (formula.is_compound_predicate) {
         switch (formula.casusu) {
-            case ACT:
+            case ACT: {
                 assert(act_atoms.contains(formula.act));
                 return formula;
+            }
             case OR: {
                 assert(formula.args.at(0).is_negated);
                 semantic_atom_set left= atom_decomposition(formula.args.at(0).act);
@@ -150,7 +150,7 @@ ltlf input_pipeline::setInterpretCompoundSubatom(const ltlf &formula) {
                 for (const std::string& act : left) {
                     right = ltlf::Or(ltlf::Act(act).negate(), right);
                 }
-                return right;
+                return right.setBeingCompound(true);
             }
             case AND:
                 return extractLtlfFormulaFromSubAtoms(formula).setBeingCompound(true);
@@ -345,14 +345,17 @@ void input_pipeline::print_equivalence_classes(std::ostream &os) {
 }
 
 std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
-        const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> &data_log) {
+        const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> &data_log,
+        std::unordered_set<std::string> &SigmaAll) {
     std::vector<std::vector<std::string>> formaggino;
+    SigmaAll.insert(atom_universe.begin(), atom_universe.end());
     for (const std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>& trace : data_log) {
         std::vector<std::string> fantasma;
         for (const std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>& event : trace) {
             const std::string& event_label = event.first;
             if ((!act_universe.contains(event_label)) || (act_atoms.contains(event_label))) {
                 fantasma.emplace_back(event_label);
+                SigmaAll.insert(event_label);
             } else {
                 for (const auto& key_value : event.second) {
                     semantic_atom_set S;
@@ -406,20 +409,134 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
 
 #include <declare/DataTraceParse.h>
 
-std::vector<std::vector<std::string>> input_pipeline::convert_trace_labels(const std::string &file) {
+std::vector<std::vector<std::string>>
+input_pipeline::convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll) {
     DataTraceParse dtp;
     std::ifstream f{file};
-    return toCanonicalTraces(dtp.load(f));
+    return toCanonicalTraces(dtp.load(f),  SigmaAll);
 }
 
-void input_pipeline::print_atomized_traces(const std::string &input_file, std::ostream &os) {
-    for (const std::vector<std::string>& atom_trace : convert_trace_labels(input_file)) {
-        for (size_t i = 0, N = atom_trace.size(); i<N; i++) {
-            os << atom_trace.at(i);
-            if (i!= (N-1))
-                os << " ";
-            else
-                os << std::endl;
+void input_pipeline::print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
+                                           std::unordered_set<std::string> &SigmaAll) {
+    const auto log = convert_trace_labels(input_file, SigmaAll);
+    {
+        serialize_non_data_log(log, file_text_and_xes+".xes");
+    }
+    {
+        std::ofstream f{file_text_and_xes+".txt"};
+        for (const std::vector<std::string>& atom_trace : log) {
+            for (size_t i = 0, N = atom_trace.size(); i<N; i++) {
+                f << atom_trace.at(i);
+                if (i!= (N-1))
+                    f << " ";
+                else
+                    f << std::endl;
+            }
         }
     }
+
+}
+
+#include <graphs/FlexibleFA.h>
+#include <ltlf/westergraad_semantics/FormulaToWestergaardFA.h>
+#include <graphs/algorithms/shiftLabelsToNodes.h>
+#include <graphs/algorithms/minimizeDFA.h>
+
+std::string ignore3(const std::string& x, const std::string& y) {
+    return x+y;
+}
+
+#include <filesystem>
+namespace fs = std::filesystem;
+
+FlexibleFA<size_t, std::string>
+input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
+                                               const std::string &single_line_clause_file) {
+#if 1
+    std::vector<std::string> SigmaVector;
+    SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
+    std::vector<FlexibleFA<std::string, std::string>> GraphVector;
+    {
+        std::vector<ltlf> formulas_to_dfas;
+        if (formula.casusu == AND) {
+            auto falsehood = ltlf::True().negate().simplify();
+            auto truth = ltlf::True();
+            std::unordered_set<ltlf> set;
+            formula.collectStructuralElements(AND, set, true);
+            if (set.contains(truth))
+                set.erase(truth);
+            if (!set.contains(falsehood)) {
+                bool doNotInsert = false;
+                for (const auto &arg : set) {
+                    if (set.contains(arg.negate().simplify())) {
+                        doNotInsert = true;
+                        break;
+                    }
+                }
+                if (doNotInsert) {
+                    set.clear();
+                }
+                formulas_to_dfas.insert(formulas_to_dfas.end(), set.begin(), set.end());
+            }
+        } else {
+            formulas_to_dfas.emplace_back(formula);
+        }
+
+        // Creating the actual file, to be parsed by the python script
+        std::ofstream file{single_line_clause_file};
+        for (auto it = formulas_to_dfas.begin(); it != formulas_to_dfas.end(); it++) {
+            file << *it << std::endl;
+            file.flush();
+        }
+        file.close();
+
+        // Parsing the file in Python, and then generating the sub-elements
+        {
+            fs::path slcf_path = single_line_clause_file;
+            pyscript.process_expression(fs::absolute(slcf_path).string());
+        }
+
+    }
+
+#if 0
+    if (GraphVector.empty()) {
+        return {};
+    } else if (GraphVector.size() == 1) {
+        FlexibleFA<size_t, std::string> G;
+        {
+            FlexibleFA<size_t, std::string> l = GraphVector.at(0).shiftLabelsToEdges();
+            minimizeDFA<size_t, std::string>(l).ignoreNodeLabels(G);
+        }
+        return G;
+    } else {
+        FlexibleFA<std::string, size_t> curr;
+        {
+            FlexibleFA<size_t, std::string> g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(GraphVector.at(0), GraphVector.at(1)).shiftLabelsToEdges().makeDFAAsInTheory();
+            FlexibleFA<size_t, std::string> G;
+            {
+                FlexibleFA<std::vector<size_t>, std::string> gr = minimizeDFA<size_t, std::string>(g);
+                gr.ignoreNodeLabels(G);
+            }
+            curr = G.shiftLabelsToNodes();
+        }
+        /*for (size_t i = 2, N = GraphVector.size(); i<N; i++) {
+            FlexibleFA<size_t, std::string> g = FlexibleFA<std::string, std::string>::crossProductWithNodeLabels(curr, GraphVector.at(i)).shiftLabelsToEdges().makeDFAAsInTheory();
+            FlexibleFA<size_t, std::string> G;
+            {
+                FlexibleFA<std::vector<size_t>, std::string> gr = minimizeDFA<size_t, std::string>(g);
+                gr.ignoreNodeLabels(G);
+            }
+            curr = G.shiftLabelsToNodes();
+        }*/
+        auto l = curr.shiftLabelsToEdges();
+        FlexibleFA<size_t, std::string> G;
+        minimizeDFA<size_t, std::string>(l).ignoreNodeLabels(G);
+        return G;
+    }
+#else
+    return {};
+#endif
+#else
+    return {};
+#endif
 }

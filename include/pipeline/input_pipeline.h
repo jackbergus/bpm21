@@ -27,7 +27,9 @@
 #define BPM21_INPUT_PIPELINE_H
 
 #include <pipeline/pipeline_utils.h>
-#include <graphs/third-party-wrappers/lydia_entry_point.h>
+//#include <graphs/third-party-wrappers/lydia_entry_point.h>
+#include <graphs/FlexibleFA.h>
+#include <graphs/third-party-wrappers/FLLOATScriptRunner.h>
 
 struct input_pipeline {
     label_var_atoms_map_t map1;
@@ -35,9 +37,11 @@ struct input_pipeline {
     label_set_t           act_atoms;
     double_intervals_map_t  double_map;
     string_intervals_map_t  string_map;
-    ltlf model;
+    ltlf model, final_model;
 
-    lydia_entry_point     lydia_ep;
+    //lydia_entry_point     lydia_ep;
+
+    FLLOATScriptRunner pyscript;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 
@@ -50,16 +54,28 @@ struct input_pipeline {
 
     input_pipeline(const std::string& fresh_atom_label);
 
-    std::vector<std::vector<std::string>> convert_trace_labels(const std::string& file);
-    std::vector<std::vector<std::string>> toCanonicalTraces(const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>>& data_log);
+    std::vector<std::vector<std::string>>
+    convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll);
+    std::vector<std::vector<std::string>> toCanonicalTraces(
+            const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> &data_log,
+            std::unordered_set<std::string> &SigmaAll);
 
     void print_equivalence_classes(std::ostream &os);
     void print_sigma(std::ostream& os);
-    void print_atomized_traces(const std::string& input_file, std::ostream& os);
+    void print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes, std::unordered_set<std::string> &SigmaAll);
 
     void run_pipeline(const std::string& file);
+    FlexibleFA<size_t, std::string>
+    decompose_genmodel_for_tiny_graphs(std::unordered_set<std::string> &SigmaAll, const std::string &single_line_file) {
+        return decompose_ltlf_for_tiny_graphs(final_model, SigmaAll, single_line_file);
+    }
+
 
 private:
+    FlexibleFA<size_t, std::string>
+    decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
+                                   const std::string &single_line_clause_file);
+
     size_t count_fresh_atoms;
 
     ltlf setInterpretCompoundSubatom(const ltlf& formula);

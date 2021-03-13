@@ -7,3 +7,9 @@
 [submodule "submodules/magic_enum"]
 	path = submodules/magic_enum
 	url = https://github.com/Neargye/magic_enum
+[submodule "submodules/flloat"]
+	path = submodules/flloat
+	url = https://github.com/whitemech/flloat/
+[submodule "submodules/date"]
+	path = submodules/date
+	url = https://github.com/HowardHinnant/date

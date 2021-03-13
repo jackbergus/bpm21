@@ -33,6 +33,7 @@ std::vector<DeclareDataAware> DeclareModelParse::load(std::ifstream& stream) {
     DADLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     DADParser parser(&tokens);
+
     return visit(parser.data_aware_declare()).as<std::vector<DeclareDataAware>>();
 }
 
@@ -52,6 +53,7 @@ antlrcpp::Any DeclareModelParse::visitNary_prop(DADParser::Nary_propContext *ctx
         std::tie (dda.left_act, dda.dnf_left_map) =
                 visitFields(ctx->fields(0)).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
+        std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_left_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.left_act;
@@ -60,6 +62,7 @@ antlrcpp::Any DeclareModelParse::visitNary_prop(DADParser::Nary_propContext *ctx
         std::tie (dda.right_act, dda.dnf_right_map) =
                 visitFields(ctx->fields(1)).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
+        std::transform(dda.right_act.begin(), dda.right_act.end(), dda.right_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_right_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.right_act;
@@ -78,6 +81,7 @@ antlrcpp::Any DeclareModelParse::visitUnary_prop(DADParser::Unary_propContext *c
         std::tie (dda.left_act, dda.dnf_left_map) =
                 visitFields(ctx->fields()).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
+        std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_left_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.left_act;

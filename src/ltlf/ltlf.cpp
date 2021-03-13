@@ -103,10 +103,10 @@ struct ltlf ltlf::WeakUntil(const ltlf &left, const ltlf &right) {
 
 std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
     std::string reset = "";
-    if (syntax.is_compound_predicate) {
+    /*if (syntax.is_compound_predicate) {
         os << "\033[32m";
         reset = "\033[0m";
-    }
+    }*/
     if (syntax.is_negated)
         os << "!";
     switch (syntax.casusu) {
@@ -130,6 +130,35 @@ std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
             return os << "true"<< reset;
         default:
             return os << "false"<< reset;
+    }
+}
+
+bool ltlf::easy_interpret(const std::string &map) const {
+    switch (casusu) {
+        case TRUE:
+            return true;
+        case FALSE:
+            return false;
+        case ACT:
+            if (!is_negated) {
+                bool res = (map == (act));
+                return res;
+            } else {
+                bool res = !(map == (act));
+                return res;
+            }
+        case NEG_OF:
+            return !args.at(0).easy_interpret(map);
+        case OR: {
+            return args.at(0).easy_interpret(map) || args.at(1).easy_interpret( map);
+        }
+        case AND: {
+            return args.at(0).easy_interpret(map) && args.at(1).easy_interpret( map);
+        }
+        case NEXT:
+            return args.at(0).easy_interpret(map); // Stops the interpretation before the current element
+        default:
+            assert(false);
     }
 }
 
@@ -312,7 +341,7 @@ bool ltlf::containsElement(formula_t type, const ltlf& item, bool simplification
     }
 }*/
 
-/*struct ltlf ltlf::_isPotentialFinalState() const {
+struct ltlf ltlf::_isPotentialFinalState() const {
     switch (casusu) {
         case ACT:
         case TRUE:
@@ -335,11 +364,11 @@ bool ltlf::containsElement(formula_t type, const ltlf& item, bool simplification
         default:
             throw std::runtime_error("Unexpected case");
     }
-}*/
+}
 
 #include <cassert>
 
-/*
+
 void ltlf::_actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal) const {
     switch (casusu) {
         case ACT: {}
@@ -361,13 +390,13 @@ void ltlf::_actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal) c
             break;
         case UNTIL:
         case RELEASE:
+        case NUMERIC_ATOM:
             std::cerr << "Error: this should be always called after next normal form, so I should not be able to call this" << std::endl;
             assert(false);
-            break;
     }
-}*/
+}
 
-/*struct ltlf ltlf::_interpret(const std::unordered_set<std::string>& map) const {
+struct ltlf ltlf::_interpret(const std::unordered_set<std::string>& map) const {
     switch (casusu) {
         case ACT:
             if (!is_negated) {
@@ -390,22 +419,22 @@ void ltlf::_actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal) c
         default:
             return {*this};
     }
-}*/
-/*
+}
+
 PropositionalizedAtomsSet ltlf::possibleActionsUpToNext() const {
     PropositionalizedAtomsSet result;
     nnf().stepwise_expand()._actionsUpToNext(result, true);
     return result;
-}*/
+}
 
-/*std::unordered_set<struct ltlf> ltlf::propositionalize() const {
-    std::unordered_set<struct ltlf> result;
+std::unordered_set<std::string> ltlf::propositionalize() const {
+    std::unordered_set<std::string> result;
     simplify()._propositionalize(result);
     return result;
-}*/
+}
 
-/*
-void ltlf::_propositionalize(std::unordered_set<struct ltlf> &atoms, bool blockNext) const {
+
+void ltlf::_propositionalize(std::unordered_set<std::string > &atoms, bool blockNext) const {
     switch (casusu) {
         case ACT: {}
             atoms.insert({act});
@@ -417,21 +446,28 @@ void ltlf::_propositionalize(std::unordered_set<struct ltlf> &atoms, bool blockN
             break;
         case OR:
         case AND:
+
+        case UNTIL:  //TODO
+        case RELEASE://TODO
             args.at(0)._propositionalize(atoms, blockNext);
             args.at(1)._propositionalize(atoms, blockNext);
             break;
-        case UNTIL:
+        /*Original
+         *
+         * case UNTIL:
         case RELEASE:
             if (!atoms.contains(*this)) {
                 atoms.insert(*this);
                 stepwise_expand()._propositionalize(atoms, blockNext);
             }
-            break;
+            break;*/
         case TRUE:
         case FALSE:
             break;
+        case NUMERIC_ATOM:
+            throw std::runtime_error("ERROR: the expression shall not contain an interval");
     }
-}*/
+}
 
 struct ltlf ltlf::stepwise_expand() const {
     switch (casusu) {

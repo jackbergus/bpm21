@@ -45,9 +45,10 @@ protected:
     adjacency_graph g;
     std::unordered_map<size_t, NodeElement> nodeLabel;
     std::unordered_map<size_t, EdgeLabel> costMap;
-    std::unordered_map<NodeElement, std::vector<size_t>> nodeLabelInv;
 
 public:
+    std::unordered_map<NodeElement, std::vector<size_t>> nodeLabelInv;
+
     FlexibleGraph() = default;
     FlexibleGraph(const FlexibleGraph& x) = default;
     FlexibleGraph(FlexibleGraph&& x) = default;

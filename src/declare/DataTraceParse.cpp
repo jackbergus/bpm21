@@ -65,6 +65,7 @@ antlrcpp::Any DataTraceParse::visitEvent(TracesParser::EventContext *ctx) {
     if (ctx) {
         std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>> event;
         event.first = ctx->LABEL()->getText();
+        std::transform(event.first.begin(), event.first.end(), event.first.begin(), ::tolower);
         event.second = visitData_part(ctx->data_part()).as<std::unordered_map<std::string, std::variant<std::string, double>>>();
         return {event};
     }

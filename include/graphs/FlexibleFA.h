@@ -270,8 +270,8 @@ public:
         }
     }
 
-    FlexibleFA<size_t, EdgeLabel> shiftLabelsToEdges() {
-        FlexibleFA<size_t, EdgeLabel> result;
+    FlexibleFA<size_t, NodeElement> shiftLabelsToEdges() {
+        FlexibleFA<size_t, NodeElement> result;
         size_t start = result.addNewNodeWithLabel(-1);
         std::unordered_map<size_t, size_t> node_id_conversion;
         result.addToInitialNodesFromId(start);
@@ -297,7 +297,27 @@ public:
     }
 
 
+    void ignoreNodeLabels(FlexibleFA<std::string, EdgeLabel> &multigraph) {
 
+        std::unordered_map<size_t, size_t> inverseMap;
+        size_t incr = 0;
+        for (size_t element : getNodeIds()) {
+            int neueId = multigraph.addNewNodeWithLabel(std::to_string(incr++));
+            inverseMap[element] = neueId;
+            if (isFinalNodeByID(element))
+                multigraph.addToFinalNodesFromId(neueId);
+            if (isInitialNodeByID(element))
+                multigraph.addToInitialNodesFromId(neueId);
+        }
+
+        for (size_t element : getNodeIds()) {
+            size_t srcId = inverseMap.at(element);
+            for (const std::pair<EdgeLabel, size_t>& edge : outgoingEdges(element)) {
+                size_t dstId = inverseMap.at(edge.second);
+                multigraph.addNewEdgeFromId(srcId, dstId, edge.first);
+            }
+        }
+    }
 
 
     FlexibleFA<EdgeLabel, NodeElement> shiftLabelsToNodes() {
@@ -331,9 +351,9 @@ public:
         return result;
     }
 
-    template <typename NL, typename EL, typename F>
+    template <typename NL, typename EL>
     static FlexibleFA<NL, EL> crossProductWithNodeLabels(FlexibleFA<NL, EL>& lhs,
-                                                         FlexibleFA<NL, EL>& rhs, F edgeCombiner) {
+                                                         FlexibleFA<NL, EL>& rhs) {
 
         // Performing the node label's intersection
         typename std::unordered_map<NL, std::vector<size_t>>::iterator beg, end;
@@ -405,7 +425,7 @@ public:
                             for (const auto& rightEdge : it->second) {
                                 dstNodePair.second = rightEdge.second;
 
-                                EL resultingEL = edgeCombiner(leftEdge.first, rightEdge.first);
+                                EL resultingEL = (leftEdge.first + rightEdge.first);
                                 size_t dst;
                                 auto nodeDstId = pairNodesToDestGraphId.find(dstNodePair);
                                 if (nodeDstId == pairNodesToDestGraphId.end()) {

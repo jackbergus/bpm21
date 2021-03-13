@@ -1,5 +1,5 @@
 /*
- * log_1.txt
+ * FLLOATScriptRunner.h
  * This file is part of bpm21
  *
  * Copyright (C) 2021 - Giacomo Bergami
@@ -17,5 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with bpm21. If not, see <http://www.gnu.org/licenses/>.
  */
-B { x = 1.0 } A { x = 0.0 } A { x = 4.0 } ;
-A { x = 8.0 } A { x = 11.0 }
+//
+// Created by giacomo on 13/03/21.
+//
+
+#ifndef BPM21_FLLOATSCRIPTRUNNER_H
+#define BPM21_FLLOATSCRIPTRUNNER_H
+
+#define PY_SSIZE_T_CLEAN
+#include <string>
+#include <iomanip>
+
+
+class FLLOATScriptRunner {
+public:
+    FLLOATScriptRunner();
+    ~FLLOATScriptRunner();
+    void process_expression(const std::string& file_to_parse);
+};
+
+
+
+#endif //BPM21_FLLOATSCRIPTRUNNER_H

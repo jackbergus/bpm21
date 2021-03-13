@@ -27,6 +27,7 @@
 #include <pipeline/input_pipeline.h>
 
 #include "declare/DataTraceParse.h"
+#include "graphs/third-party-wrappers/ParseFFLOATDot.h"
 
 void test_data_predicate() {
     DataPredicate x_1{"x", LT, 0.2};
@@ -53,8 +54,6 @@ std::ostream &operator<<(std::ostream &os, const std::variant<std::string, doubl
         return os << std::get<double >(insertion);
 }
 
-
-
 int main() {
 
 #if 1
@@ -67,31 +66,57 @@ int main() {
         }
 
     }*/
+#if 1
     {
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_1.txt");
+        std::unordered_set<std::string> SigmaAll;
         {
             std::ofstream f{"eq_classes_1.txt"};
             Pip.print_equivalence_classes(f);
         }
         {
-            std::ofstream f{"log_1_out.txt"};
-            Pip.print_atomized_traces("log_1.txt", f);
+            Pip.print_atomized_traces("log_1.txt", "log_atomized_1", SigmaAll);
+        }
+        {
+            std::ofstream f{"graph_1.dot"};
+            std::string single_line{"single_line_clause_1.txt"};
+            Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
+            f.flush(); f.close();
         }
     }
     {
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_2.txt");
+        std::unordered_set<std::string> SigmaAll;
         {
             std::ofstream f{"eq_classes_2.txt"};
             Pip.print_equivalence_classes(f);
         }
         {
             std::ofstream f{"log_2_out.txt"};
-            Pip.print_atomized_traces("log_2.txt", f);
+            Pip.print_atomized_traces("log_2.txt", "log_atomized_2", SigmaAll);
+        }
+        {
+            std::ofstream f{"graph_2.dot"};
+            std::string single_line{"single_line_clause_2.txt"};
+            Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
+            f.flush(); f.close();
         }
     }
+#endif
 
+/*
+    std::ifstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/single_line_clause_1.txt_graph_1"};
+    ParseFFLOATDot test;
+    auto parsing_result = test.parse(f, {"fa1", "fa2", "fa3", "a", "b"});
+    std::ofstream g1{"back.dot"};
+    parsing_result.dot(g1, false);
+    g1.flush(); g1.close();*/
+
+    /*FLLOATScriptRunner psr;
+    psr.process_expression("/media/giacomo/Data/bz/CLionProjects/bpm21/single_line_clause_1.txt");
+*/
 
 #else
     DataTraceParse dtp;

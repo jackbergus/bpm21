@@ -1,6 +1,0 @@
-fa2 fa1
-fa1 fa2
-fa3 fa1
-fa1 fa3
-fa3 fa2
-fa2 fa3

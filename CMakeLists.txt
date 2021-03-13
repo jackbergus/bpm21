@@ -15,9 +15,14 @@ include_directories(include)
 include_directories(submodules/json/include)
 include_directories(submodules/magic_enum/include)
 
-add_subdirectory(submodules/lydia-full)
-include_directories(submodules/lydia-full/lib/include)
-include_directories(submodules/lydia-full/third_party/spdlog/include)
+#add_subdirectory(submodules/lydia-full)
+#include_directories(submodules/lydia-full/lib/include)
+#include_directories(submodules/lydia-full/third_party/spdlog/include)
+
+#find_package(Boost REQUIRED regex system filesystem thread graph)
+#include_directories(${BOOST_INCLUDE_DIRS})
+#message("boost lib: ${Boost_LIBRARIES}")
+#message("boost inc:${Boost_INCLUDE_DIR}")
 
 set(pipeline
         src/pipeline/DoublePrevNext.cpp
@@ -25,34 +30,47 @@ set(pipeline
         src/pipeline/StringPrevNext.cpp
         src/pipeline/string_interval_tree_t.cpp
         src/pipeline/pipeline_utils.cpp
-        src/pipeline/input_pipeline.cpp)
+        src/pipeline/input_pipeline.cpp src/pipeline/SimpleXESSerializer.cpp include/pipeline/SimpleXESSerializer.h)
 
 set(graphs
 
         src/graphs/adjacency_graph.cpp
-        src/graphs/minimizeDFA.cpp)
+        src/graphs/minimizeDFA.cpp
+        src/ltlf/westergraad_semantics/FormulaToWestergaardFA.cpp
+        include/ltlf/westergraad_semantics/FormulaToWestergaardFA.h
+        include/ltlf/westergraad_semantics/WestergaardNFALabel.h src/graphs/third-party-wrappers/FLLOATScriptRunner.cpp include/graphs/third-party-wrappers/FLLOATScriptRunner.h)
 
 set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
                   antlr4/cpp/antlr4/DADLexer.cpp
                   antlr4/cpp/antlr4/DADParser.cpp
                   antlr4/cpp/antlr4/DADVisitor.cpp
                   src/declare/DeclareModelParse.cpp
+
+        antlr4/cpp/antlr4/DOTBaseListener.cpp
+        antlr4/cpp/antlr4/DOTLexer.cpp
+        antlr4/cpp/antlr4/DOTParser.cpp
+        antlr4/cpp/antlr4/DOTVisitor.cpp
+
+
+        antlr4/cpp/antlr4/FLLOATPropBaseListener.cpp
+        antlr4/cpp/antlr4/FLLOATPropLexer.cpp
+        antlr4/cpp/antlr4/FLLOATPropParser.cpp
+        antlr4/cpp/antlr4/FLLOATPropVisitor.cpp
+
         antlr4/cpp/antlr4/TracesBaseListener.cpp
         antlr4/cpp/antlr4/TracesBaseVisitor.cpp
         antlr4/cpp/antlr4/TracesLexer.cpp
         antlr4/cpp/antlr4/TracesParser.cpp
         antlr4/cpp/antlr4/TracesVisitor.cpp
         src/declare/DataTraceParse.cpp
-        include/declare/DataTraceParse.h)
+        include/declare/DataTraceParse.h src/graphs/third-party-wrappers/ParseFFLOATDot.cpp include/graphs/third-party-wrappers/ParseFFLOATDot.h src/graphs/third-party-wrappers/FLLOATSimplePropParser.cpp include/graphs/third-party-wrappers/FLLOATSimplePropParser.h)
 
 add_executable(bpm21
         main.cpp
 
         ${antlr_sources}
         ${pipeline}
-
-        src/graphs/third-party-wrappers/lydia_entry_point.cpp
-
+        ${graphs}
 
         src/ltlf/PropositionalizedAtomsSet.cpp
         src/utils/numeric/hash_combine.cpp
@@ -60,4 +78,6 @@ add_executable(bpm21
         src/declare/DeclareDataAware.cpp
         src/ltlf/DataPredicate.cpp)
 
-target_link_libraries(bpm21 antlr4_static lydia Threads::Threads)
+include_directories(submodules/date/include)
+
+target_link_libraries(bpm21 antlr4_static )

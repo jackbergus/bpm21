@@ -108,23 +108,23 @@ struct ltlf {
     struct ltlf negate() const;
     struct ltlf nnf() const;
     struct ltlf stepwise_expand() const;
-    //std::unordered_set<struct ltlf> propositionalize() const;
-    //PropositionalizedAtomsSet possibleActionsUpToNext() const;
+    std::unordered_set<std::string> propositionalize() const;
+    PropositionalizedAtomsSet possibleActionsUpToNext() const;
 
     //std::unordered_set<std::string> allActions() const;
 
 
-    /*struct ltlf interpret(const std::unordered_set<std::string>& I) const {
+    struct ltlf interpret(const std::unordered_set<std::string>& I) const {
         return nnf().simplify().stepwise_expand()._interpret(I);
     }
 
-    struct ltlf interpret2(const std::unordered_set<struct ltlf>& I) const {
+    /*struct ltlf interpret2(const std::unordered_set<struct ltlf>& I) const {
         return nnf().simplify().stepwise_expand()._interpret2(I);
     }*/
 
-    /*bool isPotentialFinalState() const {
+    bool isPotentialFinalState() const {
         return nnf().simplify()._isPotentialFinalState().casusu == TRUE;
-    }*/
+    }
 
     void collectStructuralElements(formula_t type, std::unordered_set<ltlf>& set, bool simplificationType) const;
     bool containsElement(formula_t type, const ltlf& item, bool simplificationType) const;
@@ -137,11 +137,13 @@ struct ltlf {
     bool operator==(const ltlf &rhs) const;
     bool operator!=(const ltlf &rhs) const;
 
+    bool easy_interpret(const std::string& map) const;
+
 private:
-   //void _propositionalize(std::unordered_set<struct ltlf>& atoms, bool blockNext = false) const;
-   // struct ltlf _interpret(const std::unordered_set<std::string>& map) const;
-    //void _actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal = true) const;
-    //struct ltlf _isPotentialFinalState() const;
+   void _propositionalize(std::unordered_set<std::string>& atoms, bool blockNext = false) const;
+    struct ltlf _interpret(const std::unordered_set<std::string>& map) const;
+    void _actionsUpToNext(PropositionalizedAtomsSet &atoms, bool isTerminal = true) const;
+    struct ltlf _isPotentialFinalState() const;
     //struct ltlf _interpret2(const std::unordered_set<struct ltlf>& map) const;
    // void _allActions(std::unordered_set<std::string> &labels) const;
 };

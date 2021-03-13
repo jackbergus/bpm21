@@ -1,5 +1,5 @@
 /*
- * log_1.txt
+ * SimpleXESSerializer.h
  * This file is part of bpm21
  *
  * Copyright (C) 2021 - Giacomo Bergami
@@ -17,5 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with bpm21. If not, see <http://www.gnu.org/licenses/>.
  */
-B { x = 1.0 } A { x = 0.0 } A { x = 4.0 } ;
-A { x = 8.0 } A { x = 11.0 }
+
+
+//
+// Created by giacomo on 13/03/21.
+//
+
+#ifndef BPM21_SIMPLEXESSERIALIZER_H
+#define BPM21_SIMPLEXESSERIALIZER_H
+
+#include <string>
+#include <iomanip>
+#include <chrono>
+#include <iostream>
+#include <date/date.h>
+
+namespace cr = std::chrono;
+
+#include <vector>
+#include <string>
+
+void serialize_non_data_log(const std::vector<std::vector<std::string>>& simple_log, const std::string& xes_file);
+
+
+#endif //BPM21_SIMPLEXESSERIALIZER_H
