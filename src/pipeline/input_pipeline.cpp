@@ -452,6 +452,8 @@ std::string ignore3(const std::string& x, const std::string& y) {
 }
 
 #include <filesystem>
+#include <graphs/third-party-wrappers/ParseFFLOATDot.h>
+
 namespace fs = std::filesystem;
 
 FlexibleFA<size_t, std::string>
@@ -460,7 +462,8 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
 #if 1
     std::vector<std::string> SigmaVector;
     SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
-    std::vector<FlexibleFA<std::string, std::string>> GraphVector;
+    std::vector<FlexibleFA<size_t, std::string>> GraphVector;
+    size_t N_graphs = 0;
     {
         std::vector<ltlf> formulas_to_dfas;
         if (formula.casusu == AND) {
@@ -488,19 +491,31 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
         }
 
         // Creating the actual file, to be parsed by the python script
-        std::ofstream file{single_line_clause_file};
-        for (auto it = formulas_to_dfas.begin(); it != formulas_to_dfas.end(); it++) {
-            file << *it << std::endl;
-            file.flush();
+        N_graphs = formulas_to_dfas.size();
+
+        if (N_graphs > 0) {
+            std::ofstream file{single_line_clause_file};
+            for (auto it = formulas_to_dfas.begin(); it != formulas_to_dfas.end(); it++) {
+                file << *it << std::endl;
+                file.flush();
+            }
+            file.close();
         }
-        file.close();
+    }
+
+
+    if (N_graphs > 0) {
 
         // Parsing the file in Python, and then generating the sub-elements
-        {
-            fs::path slcf_path = single_line_clause_file;
-            pyscript.process_expression(fs::absolute(slcf_path).string());
-        }
+        fs::path slcf_path = single_line_clause_file;
+        pyscript.process_expression(fs::absolute(slcf_path).string());
 
+        // Getting the graphs from FLLOAT
+        for (size_t i = 1; i<=N_graphs; i++) {
+            ParseFFLOATDot graph_loader;
+            std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
+            GraphVector.emplace_back(graph_loader.parse(graph_operand_file, SigmaAll));
+        }
     }
 
 #if 0

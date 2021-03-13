@@ -34,7 +34,6 @@ if __name__ == "__main__":
             auto = parser(line)
             assert (isinstance(auto, LTLfFormula))
             g3 = auto.to_automaton().to_graphviz()
-            g3.save(filename=file+"_graph_"+str(i), directory=path)
+            g3.save(filename=file+"_graph_"+str(i)+".dot", directory=path)
             i = i+1
-        print(i)
 
