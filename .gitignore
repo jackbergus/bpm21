@@ -1,0 +1,11 @@
+cmake-build-debug/
+cmake-build-debug/*
+antlr4/cpp/antlr4/
+antlr4/cpp/antlr4/*
+*.interp
+*.tokens
+venv/
+venv/*
+*.txt
+*.xes
+*.dot
