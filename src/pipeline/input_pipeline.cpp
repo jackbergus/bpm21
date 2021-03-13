@@ -410,15 +410,20 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
 #include <declare/DataTraceParse.h>
 
 std::vector<std::vector<std::string>>
-input_pipeline::convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll) {
+input_pipeline::convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll,
+                                     bool serialize_original_log_to_xes) {
     DataTraceParse dtp;
     std::ifstream f{file};
-    return toCanonicalTraces(dtp.load(f),  SigmaAll);
+    const auto data_log = dtp.load(f);
+    if (serialize_original_log_to_xes) {
+        serialize_data_log(data_log, file+".xes");
+    }
+    return toCanonicalTraces(data_log,  SigmaAll);
 }
 
 void input_pipeline::print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
-                                           std::unordered_set<std::string> &SigmaAll) {
-    const auto log = convert_trace_labels(input_file, SigmaAll);
+                                           std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes) {
+    const auto log = convert_trace_labels(input_file, SigmaAll, serialize_original_to_xes);
     {
         serialize_non_data_log(log, file_text_and_xes+".xes");
     }

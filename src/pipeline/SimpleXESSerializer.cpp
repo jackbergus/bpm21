@@ -49,7 +49,7 @@ void begin_event_serialize(std::ostream& os) {
 void serialize_event_label(std::ostream& os, const std::string& act) {
     os << "\t\t\t<string key=\"concept:name\" value=" << std::quoted(act) << "/>" << std::endl;
     os << "\t\t\t<string key=\"lifecycle:transition\" value=\"complete\"/>" << std::endl;
-    os << "\t\t\t<string key=\"time:timestamp\" value=\"" << date::format("%FT%TZ", cr::floor<cr::seconds>(cr::system_clock::now())) << "\"/>" << std::endl;
+    os << "\t\t\t<string key=\"time:timestamp\" value=\"" << date::format("%FT%TZ", cr::floor<cr::microseconds>(cr::system_clock::now())) << "\"/>" << std::endl;
 }
 
 void serialize_event_attribute(std::ostream& os, const std::string& key, const std::string& value) {
@@ -74,6 +74,7 @@ void end_log(std::ostream& os) {
 
 #include <fstream>
 
+
 void serialize_non_data_log(const std::vector<std::vector<std::string>> &simple_log, const std::string &xes_file) {
     std::ofstream file{xes_file};
     begin_log(file);
@@ -83,6 +84,32 @@ void serialize_non_data_log(const std::vector<std::vector<std::string>> &simple_
         for (const auto& event : trace) {
             begin_event_serialize(file);
             serialize_event_label(file, event);
+            end_event_serialize(file);
+        }
+        end_trace_serialize(file);
+        i++;
+    }
+    end_log(file);
+}
+
+void serialize_data_log(
+        const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> & data_log,
+        const std::string &xes_file) {
+    std::ofstream file{xes_file};
+    begin_log(file);
+    size_t i = 0;
+    for (const auto& trace : data_log) {
+        begin_trace_serialize(file, std::to_string(i));
+        for (const auto& event : trace) {
+            begin_event_serialize(file);
+            serialize_event_label(file, event.first);
+            for (const auto& key_value : event.second) {
+                if (std::holds_alternative<std::string>(key_value.second)) {
+                    serialize_event_attribute(file, key_value.first, std::get<std::string>(key_value.second));
+                } else {
+                    serialize_event_attribute(file, key_value.first, std::get<double>(key_value.second));
+                }
+            }
             end_event_serialize(file);
         }
         end_trace_serialize(file);

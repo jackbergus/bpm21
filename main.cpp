@@ -76,7 +76,7 @@ int main() {
             Pip.print_equivalence_classes(f);
         }
         {
-            Pip.print_atomized_traces("log_1.txt", "log_atomized_1", SigmaAll);
+            Pip.print_atomized_traces("log_1.txt", "log_atomized_1", SigmaAll, true);
         }
         {
             std::ofstream f{"graph_1.dot"};
@@ -94,8 +94,7 @@ int main() {
             Pip.print_equivalence_classes(f);
         }
         {
-            std::ofstream f{"log_2_out.txt"};
-            Pip.print_atomized_traces("log_2.txt", "log_atomized_2", SigmaAll);
+            Pip.print_atomized_traces("log_2.txt", "log_atomized_2", SigmaAll, true);
         }
         {
             std::ofstream f{"graph_2.dot"};

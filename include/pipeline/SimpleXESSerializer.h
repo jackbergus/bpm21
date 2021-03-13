@@ -36,8 +36,12 @@ namespace cr = std::chrono;
 
 #include <vector>
 #include <string>
+#include <variant>
+#include <unordered_map>
 
 void serialize_non_data_log(const std::vector<std::vector<std::string>>& simple_log, const std::string& xes_file);
 
+
+void serialize_data_log(const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>>& log, const std::string& xes_file);
 
 #endif //BPM21_SIMPLEXESSERIALIZER_H

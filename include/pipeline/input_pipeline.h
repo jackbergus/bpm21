@@ -55,14 +55,16 @@ struct input_pipeline {
     input_pipeline(const std::string& fresh_atom_label);
 
     std::vector<std::vector<std::string>>
-    convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll);
+    convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll,
+                         bool serialize_original_log_to_xes);
     std::vector<std::vector<std::string>> toCanonicalTraces(
             const std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> &data_log,
             std::unordered_set<std::string> &SigmaAll);
 
     void print_equivalence_classes(std::ostream &os);
     void print_sigma(std::ostream& os);
-    void print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes, std::unordered_set<std::string> &SigmaAll);
+    void print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
+                               std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes);
 
     void run_pipeline(const std::string& file);
     FlexibleFA<size_t, std::string>
