@@ -44,6 +44,12 @@ FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream, con
             size_t src = result.addNewNodeWithLabel(nodeId);
         idConv[nodeId] = src;
     }
+    for (size_t finalNodes : parsing_result.fini()) {
+        result.addToFinalNodesFromId(idConv.at(finalNodes));
+    }
+    for (size_t initialNodes : parsing_result.init()) {
+        result.addToInitialNodesFromId(idConv.at(initialNodes));
+    }
     for (size_t nodeId = 0, N = parsing_result.maximumNodeId(); nodeId<N; nodeId++) {
         size_t src = idConv.at(nodeId);
         for (const auto&edge : parsing_result.outgoingEdges(nodeId)) {

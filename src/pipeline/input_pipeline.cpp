@@ -456,12 +456,22 @@ std::string ignore3(const std::string& x, const std::string& y) {
 
 namespace fs = std::filesystem;
 
+
+FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
+    FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
+    FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
+    FlexibleFA<size_t, std::string> result;
+    FlexibleFA<size_t, std::string> productGraph = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R).shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
+    minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
+    return result;
+}
+
 FlexibleFA<size_t, std::string>
 input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
                                                const std::string &single_line_clause_file) {
 #if 1
-    std::vector<std::string> SigmaVector;
-    SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
+    //std::vector<std::string> SigmaVector;
+    //SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
     std::vector<FlexibleFA<size_t, std::string>> GraphVector;
     size_t N_graphs = 0;
     {
@@ -503,20 +513,43 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
         }
     }
 
-
     if (N_graphs > 0) {
-
         // Parsing the file in Python, and then generating the sub-elements
         fs::path slcf_path = single_line_clause_file;
         pyscript.process_expression(fs::absolute(slcf_path).string());
 
         // Getting the graphs from FLLOAT
+        // Plus, ensuring that all the nodes that have no edges with a specific
+        // label expected from the label set, have thus edges to a new sink node
         for (size_t i = 1; i<=N_graphs; i++) {
             ParseFFLOATDot graph_loader;
             std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
-            GraphVector.emplace_back(graph_loader.parse(graph_operand_file, SigmaAll));
+            GraphVector.emplace_back(graph_loader.parse(graph_operand_file, SigmaAll).makeDFAAsInTheory(SigmaAll));
         }
     }
+
+
+    if (GraphVector.empty()) {
+        // If there are no graphs, return an empty graph
+        return {};
+    } else if (GraphVector.size() == 1) {
+        // If there is just one graph, then ensure that it is a minimal
+        // DFA by minimizing it, and then returning the outcome of the minimization
+        // FFLOAT should be already doing that, but in the meantime I also expanded
+        // the edges into the Westergaard specs. So, just to be sure!
+        FlexibleFA<size_t, std::string> G;
+        {
+            minimizeDFA<size_t, std::string>(GraphVector.at(0)).ignoreNodeLabels2(G);
+        }
+        return G.makeDFAAsInTheory(SigmaAll);
+    } else {
+        FlexibleFA<size_t, std::string> result = cross_product_westergaard(GraphVector.at(0), GraphVector.at(1), SigmaAll);
+        for (size_t i = 2, N = GraphVector.size(); i<N; i++) {
+            result = cross_product_westergaard(result, GraphVector.at(i), SigmaAll);
+        }
+        return result.makeDFAAsInTheory(SigmaAll);
+    }
+
 
 #if 0
     if (GraphVector.empty()) {

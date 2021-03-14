@@ -10,3 +10,4 @@ venv/*
 *.xes
 *.dot
 dist/*
+*.pdf

@@ -90,12 +90,24 @@ public:
 
     virtual std::vector<std::pair<EdgeLabel, size_t>> outgoingEdges(size_t n) const override {
         if (removed_nodes.contains(n)) return {};
-        return FlexibleGraph<NodeElement, EdgeLabel>::outgoingEdges(n);
+        std::vector<std::pair<EdgeLabel, size_t>> result;
+        for (const std::pair<EdgeLabel, size_t>& cp : FlexibleGraph<NodeElement, EdgeLabel>::outgoingEdges(n)) {
+            if (!removed_nodes.contains(cp.second)) {
+                result.emplace_back(cp);
+            }
+        }
+        return result;
     }
 
     virtual std::vector<std::pair<EdgeLabel, size_t>> ingoingEdges(size_t n) const override {
         if (removed_nodes.contains(n)) return {};
-        return FlexibleGraph<NodeElement, EdgeLabel>::ingoingEdges(n);
+        std::vector<std::pair<EdgeLabel, size_t>> result;
+        for (const std::pair<EdgeLabel, size_t>& cp : FlexibleGraph<NodeElement, EdgeLabel>::ingoingEdges(n)) {
+            if (!removed_nodes.contains(cp.second)) {
+                result.emplace_back(cp);
+            }
+        }
+        return result;
     }
 
     bool isFinalNodeByID(size_t id) const {
@@ -270,7 +282,7 @@ public:
         }
     }
 
-    FlexibleFA<size_t, NodeElement> shiftLabelsToEdges() {
+    FlexibleFA<size_t, NodeElement> shiftLabelsToEdges() const {
         FlexibleFA<size_t, NodeElement> result;
         size_t start = result.addNewNodeWithLabel(-1);
         std::unordered_map<size_t, size_t> node_id_conversion;
@@ -296,8 +308,29 @@ public:
         return result;
     }
 
+    void ignoreNodeLabels2(FlexibleFA<size_t, EdgeLabel> &multigraph) const {
 
-    void ignoreNodeLabels(FlexibleFA<std::string, EdgeLabel> &multigraph) {
+        std::unordered_map<size_t, size_t> inverseMap;
+        size_t incr = 0;
+        for (size_t element : getNodeIds()) {
+            int neueId = multigraph.addNewNodeWithLabel((incr++));
+            inverseMap[element] = neueId;
+            if (isFinalNodeByID(element))
+                multigraph.addToFinalNodesFromId(neueId);
+            if (isInitialNodeByID(element))
+                multigraph.addToInitialNodesFromId(neueId);
+        }
+
+        for (size_t element : getNodeIds()) {
+            size_t srcId = inverseMap.at(element);
+            for (const std::pair<EdgeLabel, size_t>& edge : outgoingEdges(element)) {
+                size_t dstId = inverseMap.at(edge.second);
+                multigraph.addNewEdgeFromId(srcId, dstId, edge.first);
+            }
+        }
+    }
+
+    void ignoreNodeLabels(FlexibleFA<std::string, EdgeLabel> &multigraph)  {
 
         std::unordered_map<size_t, size_t> inverseMap;
         size_t incr = 0;
@@ -320,7 +353,7 @@ public:
     }
 
 
-    FlexibleFA<EdgeLabel, NodeElement> shiftLabelsToNodes() {
+    FlexibleFA<EdgeLabel, NodeElement> shiftLabelsToNodes() const {
         FlexibleFA<EdgeLabel, NodeElement> result;
         std::unordered_map<int, int> edgeToNewNodeMap;
         std::unordered_map<int, std::vector<int>> outgoingEdges;
@@ -452,8 +485,9 @@ public:
         return result;
     }
 
-    FlexibleFA<NodeElement, EdgeLabel>& makeDFAAsInTheory() {
+    FlexibleFA<NodeElement, EdgeLabel>& makeDFAAsInTheory(const std::unordered_set<EdgeLabel>& additional = {}) {
         std::unordered_set<EdgeLabel> acts = FlexibleGraph<NodeElement, EdgeLabel>::getAllActionSet();
+        acts.insert(additional.begin(), additional.end());
         bool insertBottom = false;
         size_t botNode = -1;
         size_t actsSize = acts.size();
