@@ -28,20 +28,34 @@
  * Definition of all the types of Declare statements
  */
 enum declare_templates {
-    Existence,
     Absence,
+    Absence2,
+    AltResponse,
+    AltPrecedence,
+    AltSuccession,
+    Choice,
+    End,
     Exactly,
+    ExlChoice,
+    Existence,
     Init,
     RespExistence,
     CoExistence,
     Response,
     Precedence,
-    AltResponse,
-    AltPrecedence,
     ChainResponse,
     ChainPrecedence,
+    ChainSuccession,
     Succession,
-    NotSuccession
+    NotSuccession,
+    NotCoExistence,
+    NotChainPrecedence,
+    NotChainResponse,
+    NotPrecedence,
+    NotResponse,
+    NotRespExistence,
+    NegSuccession,
+    NegChainSuccession
 };
 
 #include <string>

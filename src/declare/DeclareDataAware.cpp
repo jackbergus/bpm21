@@ -117,6 +117,9 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
         case Absence:
             return ltlf::Neg(doExistence(1, left_act, dnf_left_map).toFiniteSemantics());
 
+        case Absence2:
+            return ltlf::Neg(ltlf::Diamond(ltlf::And(left, ltlf::Diamond(left))));
+
         case Exactly:
             return ltlf::And(doExistence(n, left_act, dnf_left_map).toFiniteSemantics(), doAbsence(n + 1, left_act, dnf_left_map).toFiniteSemantics());
 
@@ -126,6 +129,13 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
         case RespExistence:
             return ltlf::Implies(ltlf::Diamond(left),
                                  ltlf::Diamond(right));
+
+        case Choice:
+            return ltlf::Or(ltlf::Diamond(left), ltlf::Diamond(right));
+
+        case ExlChoice:
+            return ltlf::And(ltlf::Or(ltlf::Diamond(left), ltlf::Diamond(right)),
+                             ltlf::Neg(ltlf::And(ltlf::Diamond(left), ltlf::Diamond(right))));
 
         case CoExistence:
             return ltlf::And(ltlf::Implies(ltlf::Diamond(left),
@@ -150,21 +160,59 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
                                                            ltlf::Next(base))));
         }
 
+        case AltSuccession: {
+            auto L = ltlf::Box(ltlf::Implies(right,
+                                                ltlf::Next(ltlf::Until(left.negate(), right))));
+            struct ltlf base = ltlf::WeakUntil(right.negate(), left);
+            auto R =  ltlf::And(base, ltlf::Box(ltlf::Implies(right,
+                                                           ltlf::Next(base))));
+            return ltlf::And(L, R);
+        }
+
         case ChainResponse:
             return ltlf::Box(ltlf::Implies(left, ltlf::Next(right)));
 
         case ChainPrecedence:
             return ltlf::Box(ltlf::Implies( ltlf::Next(right), left));
 
+        case ChainSuccession:
+            return ltlf::Box(ltlf::Equivalent(left, ltlf::Next(right)));
+
         case Succession: {
             struct ltlf base = ltlf::WeakUntil(right.negate(), left);
             return ltlf::And(base, ltlf::Box(ltlf::Implies(left, ltlf::Diamond(right))));
         }
 
+        case End:
+            return ltlf::Diamond(ltlf::And(left, ltlf::Neg(ltlf::Next(ltlf::Or(left, left.negate())))));
+
+        case NotPrecedence:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Diamond(right))));
 
         case NotSuccession:
             return ltlf::Box(ltlf::Implies(left,
                                            ltlf::Neg(ltlf::Diamond(right))));
+
+        case NotResponse:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Box(right))));
+
+        case NotChainPrecedence:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Next(right))));
+
+        case NotCoExistence:
+            return ltlf::Neg(ltlf::And(ltlf::Diamond(left), ltlf::Diamond(right)));
+
+        case NegSuccession:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Box(right))));
+
+        case NotChainResponse:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Next(right))));
+
+        case NegChainSuccession:
+            return ltlf::Box(ltlf::Equivalent(left, ltlf::Next(right.negate())));
+
+        case NotRespExistence:
+            return ltlf::Implies(left, ltlf::Neg(ltlf::Diamond(right)));
     }
 }
 

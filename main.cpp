@@ -69,6 +69,24 @@ int main() {
 #if 1
     {
         input_pipeline Pip{"fa"};
+        Pip.run_pipeline("ex_3.txt");
+        std::unordered_set<std::string> SigmaAll;
+        {
+            std::ofstream f{"eq_classes_3.txt"};
+            Pip.print_equivalence_classes(f);
+        }
+        {
+            Pip.print_atomized_traces("log_1.txt", "log_atomized_1", SigmaAll, true);
+        }
+        {
+            std::ofstream f{"graph_1.dot"};
+            std::string single_line{"single_line_clause_1.txt"};
+            Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
+            f.flush(); f.close();
+        }
+    }
+    /*{
+        input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_1.txt");
         std::unordered_set<std::string> SigmaAll;
         {
@@ -102,7 +120,7 @@ int main() {
             Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
             f.flush(); f.close();
         }
-    }
+    }*/
 #endif
 
 /*
