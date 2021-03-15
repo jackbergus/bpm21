@@ -57,24 +57,55 @@ std::ostream &operator<<(std::ostream &os, const std::variant<std::string, doubl
 
 int main() {
 
+    std::string converted_file = "/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr";
+    std::vector<std::string> LOGS = {
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/0_mod/length_10.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/0_mod/length_15.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/0_mod/length_20.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/0_mod/length_25.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/0_mod/length_30.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/1_mod/length_10.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/1_mod/length_15.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/1_mod/length_20.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/1_mod/length_25.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/1_mod/length_30.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/2_mod/length_10.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/2_mod/length_15.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/2_mod/length_20.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/2_mod/length_25.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/2_mod/length_30.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/3_mod/length_10.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/3_mod/length_15.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/3_mod/length_20.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/3_mod/length_25.xes",
+            "/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/3_mod/length_30.xes"
+    };
+
     input_pipeline Pip{"p"};
-    Pip.run_pipeline("/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr.txt");
+    Pip.run_pipeline(converted_file+".txt");
     std::unordered_set<std::string> SigmaAll;
     {
-        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/3constr_eq_classes.txt"};
+        std::ofstream f{converted_file+"_eq_classes.txt"};
         Pip.print_equivalence_classes(f);
     }
     {
-        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/3constr_sigma.txt"};
+        std::ofstream f{converted_file+"_sigma.txt"};
         Pip.print_sigma(f);
     }
-    exit(1);
     {
+        for (const std::string& elements : LOGS) {
+            std::cout << "\t\t- log dumping: " << elements << std::endl;
+            Pip.print_atomized_traces(elements, elements+"_atomized_1", SigmaAll, true);
+        }
+
+    }
+    /*{
         std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr_graph.dot"};
-        std::string single_line{"single_line_clause_1.txt"};
+        std::string single_line{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr_single_line_clause.txt"};
         Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
         f.flush(); f.close();
-    }
+    }*/
+    exit(1);
 
 #if 1
     /*{

@@ -71,7 +71,7 @@ std::vector<size_t> numberToBase(size_t n, size_t b) {
 }
 
 std::string generateStringFromNumber(size_t n) {
-    const static std::string defaults = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const static std::string defaults = "abcdefghijklmnopqrstuvwxyz";
     std::string result;
     auto v = numberToBase(n, defaults.size());
     for (const auto& x : v)

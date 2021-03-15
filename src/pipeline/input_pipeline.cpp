@@ -362,6 +362,12 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
                     semantic_atom_set S;
                     bool first = true;
                     if (std::holds_alternative<std::string>(key_value.second)) {
+                        // Dealing with the case of a missing attribute, that is in the data, but not in the model:
+                        // 1) The element should have still some data
+                        assert(string_map.contains(event_label)||double_map.contains(event_label));
+                        if (!string_map.contains(event_label)) continue;
+                        // 2) There should be other data conditions: skip
+                        if (!string_map.at(event_label).contains(key_value.first)) continue;
                         auto& ref = string_map.at(event_label).at(key_value.first);
                         const std::string V = std::get<0>(key_value.second);
                         for (const auto& I : ref.collect_intervals2()) {
@@ -381,6 +387,12 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
                         }
                     } else {
                         const double V = std::get<1>(key_value.second);
+                        // Dealing with the case of a missing attribute, that is in the data, but not in the model:
+                        // 1) The element should have still some data
+                        assert(string_map.contains(event_label)||double_map.contains(event_label));
+                        if (!double_map.contains(event_label)) continue;
+                        // 2) There should be other data conditions: skip
+                        if (!double_map.at(event_label).contains(key_value.first)) continue;
                         auto& ref = double_map.at(event_label).at(key_value.first);
                         for (const auto& I : ref.collect_intervals2()) {
                             DataPredicate dp{event_label, key_value.first, I.first, I.second};

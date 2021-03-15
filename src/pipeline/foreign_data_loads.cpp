@@ -68,7 +68,7 @@ std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &fi
             eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
             STRIP_ALL_SPACES(eventName);
             STRIP_NOT_ALPHAS(eventName);
-            eventName[0] = toupper(eventName[0]);
+            TO_LOWER(eventName);
             eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
             transaction.emplace_back(eventName/*, timestamp*/);
         }
@@ -104,10 +104,7 @@ load_xes_with_data(const std::string &filename) {
                 if (tag_name == "string") {
                     if (attribute == concept_name) {
                         eventName = value;
-                        eventName = regex_replace(eventName, regex("\\d+"), istr);
                         STRIP_ALL_SPACES(eventName);
-                        STRIP_NOT_ALPHAS(eventName);
-                        break;
                     } else {
                         STRIP_NOT_ALPHAS(attribute);
                         TO_LOWER(attribute);
@@ -127,7 +124,10 @@ load_xes_with_data(const std::string &filename) {
                 }
             }
 
-            eventName[0] = toupper(eventName[0]);
+            eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
+            STRIP_ALL_SPACES(eventName);
+            STRIP_NOT_ALPHAS(eventName);
+            TO_LOWER(eventName);
             eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
             parsed_event.first = eventName;
 
