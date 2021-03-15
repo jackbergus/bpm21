@@ -88,6 +88,7 @@ int main() {
         std::ofstream f{converted_file+"_eq_classes.txt"};
         Pip.print_equivalence_classes(f);
     }
+    //
     {
         std::ofstream f{converted_file+"_sigma.txt"};
         Pip.print_sigma(f);
