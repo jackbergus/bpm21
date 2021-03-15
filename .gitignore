@@ -11,3 +11,5 @@ venv/*
 *.dot
 dist/*
 *.pdf
+data/*
+*.zip
