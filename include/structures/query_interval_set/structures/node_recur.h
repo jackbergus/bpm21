@@ -69,6 +69,39 @@ template <typename T> struct node_recur {
             ref.collect_intervals(S);
     }
 
+    template <typename PrevNext>
+    void collect_intervals2(std::unordered_set<std::pair<T,T>>& S, const PrevNext& i) const {
+        std::unordered_set<std::pair<T,T>> tmp;
+        if ((children.empty()) || isPointed) {
+            if ((!onlyForPointed.empty())) {
+                for (const node_recur<T>& ref : onlyForPointed)
+                    ref.collect_intervals2(tmp, i);
+            } else {
+                //S.emplace(min, max);
+            }
+        }
+
+        for (const node_recur<T>& ref : children)
+            ref.collect_intervals2(tmp, i);
+
+        if (tmp.empty()) {
+            S.emplace(min, max);
+        } else {
+            T mio_min = min;
+            std::vector<std::pair<T,T>> S2;
+            S2.insert(S2.end(), tmp.begin(), tmp.end());
+            std::sort(S2.begin(), S2.end());
+            for (const std::pair<T,T>& cp : S2) {
+                if (mio_min < (cp.first))
+                    S.emplace(mio_min, i.getPrev(cp.first));
+                S.emplace(cp.first, cp.second);
+                mio_min = i.getNext(cp.second);
+            }
+            if (mio_min != max)
+                S.emplace(mio_min, max);
+        }
+    }
+
     void print(std::ostream &os, unsigned int pad = 0) const {
         for (size_t i = 0; i<pad; i++) os << "..";
         os << '[' << min << ',' << max << ']' << /*(children.empty() ? " **" : "") << */(isPointed ? ("<" + std::to_string(isPointed) +"<") : "");

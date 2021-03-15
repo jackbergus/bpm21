@@ -43,9 +43,10 @@ void string_interval_tree_t::perform_insertion() {
         ///std::cout << tree << std::endl;
         ///std::cout << std::endl;
     }
+    std::cout << *this << std::endl;
     minimize_tree<std::string, StringPrevNext>(indexer, element);
     /*for (const auto& i : bulk_insertion) {
         std::cout << i << " = " << find_interval(indexer, element, i.first, i.second) << std::endl;
     }*/
-    //std::cout << *this << std::endl;
+    std::cout << *this << std::endl;
 }

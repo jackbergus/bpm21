@@ -59,7 +59,22 @@ int main() {
 
     input_pipeline Pip{"p"};
     Pip.run_pipeline("/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr.txt");
+    std::unordered_set<std::string> SigmaAll;
+    {
+        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/3constr_eq_classes.txt"};
+        Pip.print_equivalence_classes(f);
+    }
+    {
+        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/3constr_sigma.txt"};
+        Pip.print_sigma(f);
+    }
     exit(1);
+    {
+        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr_graph.dot"};
+        std::string single_line{"single_line_clause_1.txt"};
+        Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line).dot(f, false);
+        f.flush(); f.close();
+    }
 
 #if 1
     /*{

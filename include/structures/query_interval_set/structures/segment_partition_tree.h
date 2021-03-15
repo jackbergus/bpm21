@@ -46,6 +46,12 @@ template <typename T, typename PrevNext> struct segment_partition_tree {
         return S;
     }
 
+    std::unordered_set<std::pair<T,T>> collect_intervals2()  {
+        std::unordered_set<std::pair<T,T>> S;
+        element.collect_intervals2(S, indexer);
+        return S;
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const segment_partition_tree &tree) {
         os << " min: " << tree.element.min << " max: " << tree.element.max << std::endl;
         for (size_t i = 0, N = tree.element.children.size(); i<N; i++)

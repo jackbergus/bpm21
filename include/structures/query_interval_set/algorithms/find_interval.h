@@ -57,7 +57,7 @@ std::vector<std::pair<T,T>> find_interval(const PrevNext& indexer, struct node_r
             for (size_t i = 0; i<N; i++) {
                 if ((list_ptr[i].min == currentLeft) && (list_ptr[i].max == currentRight)) {
                     std::unordered_set<std::pair<T,T>> S;
-                    list_ptr[i].collect_intervals(S);
+                    list_ptr[i].collect_intervals2(S, indexer); // TODO: collect_intervals
                     result.insert(result.end(), S.begin(), S.end());
                 } else if (list_ptr[i].max < currentLeft) {
                     continue;

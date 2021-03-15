@@ -35,6 +35,7 @@
 #endif
 
 void input_pipeline::print_sigma(std::ostream &os) {
+    os.precision(17);
     os << "Sigma " << std::endl << std::endl;
     os << " * Single acts: " << std::endl;
     os << "================" << std::endl;
@@ -262,7 +263,7 @@ void input_pipeline::decompose_and_atomize() {
         for (auto& ref2 : ref->second) {
             std::vector<DataPredicate> result;
             ref2.second.perform_insertion();
-            for (const auto& I : ref2.second.collect_intervals()) {
+            for (const auto& I : ref2.second.collect_intervals2()) {
                 result.emplace_back(ref->first, ref2.first, I.first, I.second);
             }
             interval_map[ref->first].emplace_back(result);
@@ -273,7 +274,7 @@ void input_pipeline::decompose_and_atomize() {
         for (auto& ref2 : ref->second) {
             std::vector<DataPredicate> result;
             ref2.second.perform_insertion();
-            for (const auto& I : ref2.second.collect_intervals()) {
+            for (const auto& I : ref2.second.collect_intervals2()) {
                 result.emplace_back(ref->first, ref2.first, I.first, I.second);
             }
             interval_map[ref->first].emplace_back(result);
@@ -363,7 +364,7 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
                     if (std::holds_alternative<std::string>(key_value.second)) {
                         auto& ref = string_map.at(event_label).at(key_value.first);
                         const std::string V = std::get<0>(key_value.second);
-                        for (const auto& I : ref.collect_intervals()) {
+                        for (const auto& I : ref.collect_intervals2()) {
                             DataPredicate dp{event_label, key_value.first, I.first, I.second};
                             if (dp.test(V)) {
                                 assert(Mcal.contains(dp));
@@ -381,7 +382,7 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
                     } else {
                         const double V = std::get<1>(key_value.second);
                         auto& ref = double_map.at(event_label).at(key_value.first);
-                        for (const auto& I : ref.collect_intervals()) {
+                        for (const auto& I : ref.collect_intervals2()) {
                             DataPredicate dp{event_label, key_value.first, I.first, I.second};
                             if (dp.test(V)) {
                                 assert(Mcal.contains(dp));

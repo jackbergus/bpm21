@@ -89,6 +89,10 @@ struct DataPredicate {
     std::variant<std::vector<std::pair<std::string, std::string>>,
                  std::vector<std::pair<double, double>>> decompose_into_intervals() const;
 
+
+    std::variant<std::vector<std::pair<std::string, std::string>>,
+            std::vector<std::pair<double, double>>> decompose_into_intervals_with_missing() const;
+
     DataPredicate();
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::variant<std::string, double> &value);
     DataPredicate(const std::string &var, numeric_atom_cases casusu, const std::string &value);
