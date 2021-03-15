@@ -408,15 +408,25 @@ std::vector<std::vector<std::string>> input_pipeline::toCanonicalTraces(
 }
 
 #include <declare/DataTraceParse.h>
+#include <pipeline/foreign_data_loads.h>
 
 std::vector<std::vector<std::string>>
 input_pipeline::convert_trace_labels(const std::string &file, std::unordered_set<std::string> &SigmaAll,
                                      bool serialize_original_log_to_xes) {
-    DataTraceParse dtp;
-    std::ifstream f{file};
-    const auto data_log = dtp.load(f);
+    std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> data_log;
+    if (file.ends_with(".xes")) {
+        // Using the obsolete and pedantic standard
+        data_log = load_xes_with_data(file);
+    } else {
+        // Parsing using our current standard, which is much way better!
+        DataTraceParse dtp;
+        std::ifstream f{file};
+        data_log = dtp.load(f);
+
+    }
+    // We need to serialize it back to xes only if we ask for it
     if (serialize_original_log_to_xes) {
-        serialize_data_log(data_log, file+".xes");
+        serialize_data_log(data_log, file+"_converted.xes");
     }
     return toCanonicalTraces(data_log,  SigmaAll);
 }
