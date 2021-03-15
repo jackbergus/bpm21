@@ -57,6 +57,9 @@ std::ostream &operator<<(std::ostream &os, const std::variant<std::string, doubl
 
 int main() {
 
+    input_pipeline Pip{"p"};
+    Pip.run_pipeline("/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr.txt");
+    exit(1);
 
 #if 1
     /*{
