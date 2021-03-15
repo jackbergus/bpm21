@@ -28,6 +28,7 @@
 
 #include "declare/DataTraceParse.h"
 #include "graphs/third-party-wrappers/ParseFFLOATDot.h"
+#include "pipeline/foreign_data_loads.h"
 
 void test_data_predicate() {
     DataPredicate x_1{"x", LT, 0.2};
@@ -56,6 +57,9 @@ std::ostream &operator<<(std::ostream &os, const std::variant<std::string, doubl
 
 int main() {
 
+    for (const auto& trace : load_xes_with_data("/home/giacomo/Scaricati/Archivio/BPIC15_1/BPIC15_1_sorted.xes"))
+        std::cout << trace << std::endl;
+    exit(1);
 #if 1
     /*{
         input_pipeline Pip{"fa"};

@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(Threads REQUIRED)
 
+add_library(rapidxml INTERFACE)
+target_include_directories(rapidxml INTERFACE rapidxml/ )
+
 set(FORT_ENABLE_TESTING OFF CACHE INTERNAL "")
 add_subdirectory(submodules/antlr4/runtime/Cpp)
 include_directories(submodules/antlr4/runtime/Cpp/runtime/src)
@@ -19,10 +22,10 @@ include_directories(submodules/magic_enum/include)
 #include_directories(submodules/lydia-full/lib/include)
 #include_directories(submodules/lydia-full/third_party/spdlog/include)
 
-#find_package(Boost REQUIRED regex system filesystem thread graph)
-#include_directories(${BOOST_INCLUDE_DIRS})
-#message("boost lib: ${Boost_LIBRARIES}")
-#message("boost inc:${Boost_INCLUDE_DIR}")
+find_package(Boost REQUIRED regex)
+include_directories(${BOOST_INCLUDE_DIRS})
+message("boost lib: ${Boost_LIBRARIES}")
+message("boost inc:${Boost_INCLUDE_DIR}")
 
 set(pipeline
         src/pipeline/DoublePrevNext.cpp
@@ -30,7 +33,7 @@ set(pipeline
         src/pipeline/StringPrevNext.cpp
         src/pipeline/string_interval_tree_t.cpp
         src/pipeline/pipeline_utils.cpp
-        src/pipeline/input_pipeline.cpp src/pipeline/SimpleXESSerializer.cpp include/pipeline/SimpleXESSerializer.h)
+        src/pipeline/input_pipeline.cpp src/pipeline/SimpleXESSerializer.cpp include/pipeline/SimpleXESSerializer.h src/pipeline/foreign_data_loads.cpp include/pipeline/foreign_data_loads.h)
 
 set(graphs
 
@@ -72,6 +75,7 @@ add_executable(bpm21
         ${pipeline}
         ${graphs}
 
+        src/utils/xml_utils.cpp
         src/ltlf/PropositionalizedAtomsSet.cpp
         src/utils/numeric/hash_combine.cpp
         src/ltlf/ltlf.cpp include/ltlf/ltlf.h
@@ -80,4 +84,4 @@ add_executable(bpm21
 
 include_directories(submodules/date/include)
 
-target_link_libraries(bpm21 antlr4_static )
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES})
