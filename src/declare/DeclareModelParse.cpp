@@ -26,15 +26,18 @@
 #include "declare/DeclareModelParse.h"
 #include <DADLexer.h>
 
-DeclareModelParse::DeclareModelParse() {}
+DeclareModelParse::DeclareModelParse() : do_renaming{true} {}
 
-std::vector<DeclareDataAware> DeclareModelParse::load(std::ifstream& stream) {
+std::vector<DeclareDataAware> DeclareModelParse::load(std::ifstream &stream, bool do_xes_renaming) {
+    bool tmp = do_renaming;
+    do_renaming = do_xes_renaming;
     antlr4::ANTLRInputStream input(stream);
     DADLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     DADParser parser(&tokens);
-
-    return visit(parser.data_aware_declare()).as<std::vector<DeclareDataAware>>();
+    auto result = visit(parser.data_aware_declare()).as<std::vector<DeclareDataAware>>();
+    do_renaming = tmp;
+    return result;
 }
 
 antlrcpp::Any DeclareModelParse::visitData_aware_declare(DADParser::Data_aware_declareContext *ctx) {
@@ -53,7 +56,8 @@ antlrcpp::Any DeclareModelParse::visitNary_prop(DADParser::Nary_propContext *ctx
         std::tie (dda.left_act, dda.dnf_left_map) =
                 visitFields(ctx->fields(0)).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
-        std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
+        if (do_renaming)
+            std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_left_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.left_act;
@@ -62,7 +66,8 @@ antlrcpp::Any DeclareModelParse::visitNary_prop(DADParser::Nary_propContext *ctx
         std::tie (dda.right_act, dda.dnf_right_map) =
                 visitFields(ctx->fields(1)).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
-        std::transform(dda.right_act.begin(), dda.right_act.end(), dda.right_act.begin(), ::tolower);
+        if (do_renaming)
+            std::transform(dda.right_act.begin(), dda.right_act.end(), dda.right_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_right_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.right_act;
@@ -81,7 +86,8 @@ antlrcpp::Any DeclareModelParse::visitUnary_prop(DADParser::Unary_propContext *c
         std::tie (dda.left_act, dda.dnf_left_map) =
                 visitFields(ctx->fields()).as<std::pair<std::string,
                         std::vector<std::unordered_map<std::string, DataPredicate>>>>();
-        std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
+        if (do_renaming)
+            std::transform(dda.left_act.begin(), dda.left_act.end(), dda.left_act.begin(), ::tolower);
         for (auto& ref : dda.dnf_left_map) {
             for (auto& cp : ref) {
                 cp.second.label = dda.left_act;
@@ -191,16 +197,22 @@ antlrcpp::Any DeclareModelParse::visitNeq(DADParser::NeqContext *ctx) {
     return {NEQ};
 }
 
-ltlf DeclareModelParse::load_model_to_semantics(std::ifstream &stream) {
+ltlf DeclareModelParse::load_model_to_semantics(std::ifstream &stream, bool do_xes_renaming, bool is_simplified_xes) {
     ltlf formula = ltlf::True();
-    std::vector<DeclareDataAware> V = load(stream);
+    std::vector<DeclareDataAware> V;
+    if (is_simplified_xes) {
+        V = DeclareDataAware::load_simplified_declare_model(stream);
+    } else {
+        V = load(stream, do_xes_renaming);
+    }
+
     bool first = true;
     for (const DeclareDataAware& x : V) {
         if (first) {
-            formula = x.toFiniteSemantics().simplify().reduce().oversimplify();
+            formula = x.toFiniteSemantics().simplify();
             first = false;
         } else {
-            formula = ltlf::And(x.toFiniteSemantics().simplify().reduce().oversimplify(), formula);
+            formula = ltlf::And(x.toFiniteSemantics().simplify(), formula);
         }
     }
     return formula;

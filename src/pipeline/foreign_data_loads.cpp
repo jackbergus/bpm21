@@ -33,7 +33,7 @@ std::string istr(const smatch &m) {
     return generateStringFromNumber(std::stoul(m[0].str()));
 }
 
-std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &filename) {
+std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &filename, bool conservative_for_pddl) {
 
     rapidxml::xml_document<> doc;
     std::vector<char> buffer;
@@ -53,7 +53,8 @@ std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &fi
             SIBLING_ITERATE(t, event, "string", false) {
                 if (GET_ATTRIBUTE(t, "key") == concept_name) {
                     eventName = GET_ATTRIBUTE(t, "value");
-                    STRIP_ALL_SPACES(eventName);
+                    if (conservative_for_pddl)
+                        STRIP_ALL_SPACES(eventName);
                     break;
                 }
             }
@@ -65,11 +66,13 @@ std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &fi
                 }
             }
             if (timestamp == 0) timestamp += (previous+1);*/
-            eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
-            STRIP_ALL_SPACES(eventName);
-            STRIP_NOT_ALPHAS(eventName);
-            TO_LOWER(eventName);
-            eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
+            if (conservative_for_pddl) {
+                eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
+                STRIP_ALL_SPACES(eventName);
+                STRIP_NOT_ALPHAS(eventName);
+                TO_LOWER(eventName);
+                eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
+            }
             transaction.emplace_back(eventName/*, timestamp*/);
         }
     }
@@ -79,7 +82,7 @@ std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &fi
 
 std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>>
 
-load_xes_with_data(const std::string &filename) {
+load_xes_with_data(const std::string &filename, bool conservative_for_pddl) {
 
     rapidxml::xml_document<> doc;
     std::vector<char> buffer;
@@ -104,33 +107,44 @@ load_xes_with_data(const std::string &filename) {
                 if (tag_name == "string") {
                     if (attribute == concept_name) {
                         eventName = value;
-                        STRIP_ALL_SPACES(eventName);
+                        if (conservative_for_pddl)
+                            STRIP_ALL_SPACES(eventName);
                     } else {
-                        STRIP_NOT_ALPHAS(attribute);
-                        TO_LOWER(attribute);
+                        if (conservative_for_pddl) {
+                            STRIP_NOT_ALPHAS(attribute);
+                            TO_LOWER(attribute);
+                        }
                         parsed_event.second[attribute] = value;
                     }
                 } else if (tag_name == "float") {
-                    STRIP_NOT_ALPHAS(attribute);
-                    TO_LOWER(attribute);
+                    if (conservative_for_pddl) {
+                        STRIP_NOT_ALPHAS(attribute);
+                        TO_LOWER(attribute);
+                    }
                     parsed_event.second[attribute] = std::stod(value);
                 } else if (tag_name == "int") {
-                    STRIP_NOT_ALPHAS(attribute);
-                    TO_LOWER(attribute);
+                    if (conservative_for_pddl) {
+                        STRIP_NOT_ALPHAS(attribute);
+                        TO_LOWER(attribute);
+                    }
                     parsed_event.second[attribute] = std::stod(value);
                 } else if (tag_name == "date") {
-                    STRIP_NOT_ALPHAS(attribute);
+                    if (conservative_for_pddl) {
+                        STRIP_NOT_ALPHAS(attribute);
+                        TO_LOWER(attribute);
+                    }
                     parsed_event.second["time"] = (float)parse8601(value);
                 }
             }
 
-            eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
-            STRIP_ALL_SPACES(eventName);
-            STRIP_NOT_ALPHAS(eventName);
-            TO_LOWER(eventName);
-            eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
+            if (conservative_for_pddl) {
+                eventName = regex_replace(eventName, regex("[[:digit:]]+"), istr);
+                STRIP_ALL_SPACES(eventName);
+                STRIP_NOT_ALPHAS(eventName);
+                TO_LOWER(eventName);
+                eventName.erase(remove_if(eventName.begin(), eventName.end(), isspace), eventName.end());
+            }
             parsed_event.first = eventName;
-
             transaction.emplace_back(parsed_event);
         }
     }

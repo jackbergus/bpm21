@@ -20,6 +20,7 @@
 
 
 #include <magic_enum.hpp>
+#include <utils/xml_utils.h>
 #include "declare/DeclareDataAware.h"
 
 void print_dnf(std::ostream &os, const std::vector<std::unordered_map<std::string, DataPredicate>> &map) {
@@ -115,7 +116,7 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
                 return ltlf::Diamond(left).negate();
             }
         case Absence:
-            return ltlf::Neg(doExistence(1, left_act, dnf_left_map).toFiniteSemantics());
+            return ltlf::Neg(doExistence(n, left_act, dnf_left_map).toFiniteSemantics());
 
         case Absence2:
             return ltlf::Neg(ltlf::Diamond(ltlf::And(left, ltlf::Diamond(left))));
@@ -211,6 +212,9 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
         case NegChainSuccession:
             return ltlf::Box(ltlf::Equivalent(left, ltlf::Next(right.negate())));
 
+        case NotChainSuccession:
+            return ltlf::Box(ltlf::Implies(left, ltlf::Next(right.negate())));
+
         case NotRespExistence:
             return ltlf::Implies(left, ltlf::Neg(ltlf::Diamond(right)));
     }
@@ -234,4 +238,48 @@ DeclareDataAware DeclareDataAware::doAbsence(size_t n, const std::string &left_a
     sol.left_act = left_act;
     sol.dnf_left_map = dnf_left_map;
     return sol;
+}
+
+DeclareDataAware DeclareDataAware::parse_declare_non_data_string(const std::string &line) {
+    DeclareDataAware pattern;
+    std::string nextLine;
+
+    ssize_t pos = line.find('[');
+    assert(pos != std::string::npos);
+    std::string pattern_name = line.substr(0, pos);
+    pattern.casusu = magic_enum::enum_cast<declare_templates>(pattern_name).value();
+
+    pattern_name = line.substr(pos+1);
+    pos = pattern_name.find(',');
+    assert(pos != std::string::npos);
+    pattern.left_act = pattern_name.substr(0, pos);
+    STRIP_ALL_SPACES(pattern.left_act);
+
+    pattern_name = pattern_name.substr(pos+1);
+    pos = pattern_name.find(']');
+    assert(pos != std::string::npos);
+    std::string second_or_number = pattern_name.substr(0, pos);
+    STRIP_ALL_SPACES(second_or_number);
+
+    char* p;
+    unsigned long converted = strtoul(second_or_number.c_str(), &p, 10);
+    if (*p) {
+        pattern.right_act = second_or_number;
+        pattern.n = 1;
+    } else {
+        pattern.n = converted;
+    }
+
+    return pattern;
+}
+
+#include <fstream>
+
+std::vector<DeclareDataAware> DeclareDataAware::load_simplified_declare_model(std::ifstream &infile) {
+    std::string line;
+    std::vector<DeclareDataAware> V;
+    while (std::getline(infile, line)) {
+        V.emplace_back(DeclareDataAware::parse_declare_non_data_string(line));
+    }
+    return V;
 }

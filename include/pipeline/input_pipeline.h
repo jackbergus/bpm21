@@ -30,6 +30,7 @@
 //#include <graphs/third-party-wrappers/lydia_entry_point.h>
 #include <graphs/FlexibleFA.h>
 #include <graphs/third-party-wrappers/FLLOATScriptRunner.h>
+#include <graphs/third-party-wrappers/lydia_entry_point.h>
 
 struct input_pipeline {
     label_var_atoms_map_t map1;
@@ -42,6 +43,7 @@ struct input_pipeline {
     //lydia_entry_point     lydia_ep;
 
     FLLOATScriptRunner pyscript;
+    lydia_entry_point  lydiascript;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 
@@ -51,6 +53,7 @@ struct input_pipeline {
     std::unordered_map<std::string, std::vector<std::vector<DataPredicate>>> interval_map;
     std::unordered_map<DataPredicate, std::vector<std::string>> Mcal;
     semantic_atom_set atom_universe;
+
 
     input_pipeline(const std::string& fresh_atom_label);
 
@@ -66,17 +69,17 @@ struct input_pipeline {
     void print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
                                std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes);
 
-    void run_pipeline(const std::string& file);
+    void run_pipeline(const std::string &file, bool do_xes_renaming = true);
     FlexibleFA<size_t, std::string>
-    decompose_genmodel_for_tiny_graphs(std::unordered_set<std::string> &SigmaAll, const std::string &single_line_file) {
-        return decompose_ltlf_for_tiny_graphs(final_model, SigmaAll, single_line_file);
+    decompose_genmodel_for_tiny_graphs(std::unordered_set<std::string> &SigmaAll, const std::string &single_line_file, bool safely_map_names) {
+        return decompose_ltlf_for_tiny_graphs(final_model, SigmaAll, single_line_file, safely_map_names);
     }
 
 
 private:
     FlexibleFA<size_t, std::string>
     decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
-                                   const std::string &single_line_clause_file);
+                                   const std::string &single_line_clause_file, bool safely_map_names);
 
     size_t count_fresh_atoms;
 
@@ -90,7 +93,7 @@ private:
 
     semantic_atom_set _setInterpretCompoundSubatom(const ltlf& formula);
     void decompose_and_atomize();
-    void init_pipeline(const std::string& file);
+    void init_pipeline(const std::string &file, bool do_xes_renaming);
 };
 
 

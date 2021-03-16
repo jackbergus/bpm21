@@ -68,7 +68,8 @@ void adjacency_graph::DFSUtil(size_t u, size_t d, std::unordered_set<size_t> &vi
     std::unordered_set<size_t> visited;
     std::vector<ssize_t> path(V_size, -1);
     size_t path_index = 0;
-    printAllPathsUtil(u, d, visited, path, path_index, visited_src_dst);
+    std::unordered_set<size_t> visited_src_dst_global;
+    printAllPathsUtil(u, d, visited, path, path_index, visited_src_dst, visited_src_dst_global);
 }
 
 void adjacency_graph::dot(std::ostream &os) {
@@ -92,9 +93,9 @@ void adjacency_graph::dot(std::ostream &os) {
 
 void
 adjacency_graph::printAllPathsUtil(size_t u, size_t d, std::unordered_set<size_t> &visited, std::vector<ssize_t> &path,
-                                   size_t path_index, std::unordered_set<size_t> &visited_src_dst) {
+                                   size_t path_index, std::unordered_set<size_t> &visited_src_dst, std::unordered_set<size_t> &global) {
     // Mark the current node and store it in path[]
-
+    global.insert(u);
     visited.insert(u);
     path[path_index] = u;
     path_index++;
@@ -107,8 +108,8 @@ adjacency_graph::printAllPathsUtil(size_t u, size_t d, std::unordered_set<size_t
     } else {
         for (size_t edge_id : nodes.at(u)) {
             size_t dst = edge_ids.at(edge_id).second;
-            if (!visited.contains(dst))
-                printAllPathsUtil(dst, d, visited, path, path_index, visited_src_dst);
+            if ((!visited.contains(dst)) && (!global.contains(dst)))
+                printAllPathsUtil(dst, d, visited, path, path_index, visited_src_dst, global);
         }
     }
 

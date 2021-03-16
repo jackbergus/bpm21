@@ -133,6 +133,43 @@ std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
     }
 }
 
+struct ltlf ltlf::replace_with_unique_name(const std::unordered_map<std::string, std::string> &map) const {
+    switch (casusu) {
+        case ACT:
+            if (map.contains(act)) {
+                auto f = ltlf::Act(map.at(act));
+                if (is_negated)
+                    f = f.negate();
+                return f;
+            } else {
+                assert(false);
+            }
+
+        case NEG_OF:
+            return ltlf::Neg(args.at(0).replace_with_unique_name(map));
+        case NEXT:
+            return ltlf::Next(args.at(0).replace_with_unique_name(map));
+        case OR:
+            return ltlf::Or(args.at(0).replace_with_unique_name(map),
+                            args.at(1).replace_with_unique_name(map));
+        case AND:
+            return ltlf::And(args.at(0).replace_with_unique_name(map),
+                            args.at(1).replace_with_unique_name(map));
+
+        case UNTIL:
+            return ltlf::Until(args.at(0).replace_with_unique_name(map),
+                            args.at(1).replace_with_unique_name(map));
+        case RELEASE:
+            return ltlf::Release(args.at(0).replace_with_unique_name(map),
+                            args.at(1).replace_with_unique_name(map));
+        case TRUE:
+        case FALSE:
+            return *this;
+        default:
+            throw std::runtime_error("ERROR: the expression shall not contain an interval");
+    }
+}
+
 bool ltlf::easy_interpret(const std::string &map) const {
     switch (casusu) {
         case TRUE:

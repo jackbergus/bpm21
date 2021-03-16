@@ -27,14 +27,14 @@
 #include "graphs/third-party-wrappers/FLLOATSimplePropParser.h"
 #include <DOTLexer.h>
 
-FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream, const std::unordered_set<std::string>& SigmaAll) {
+FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream,
+                                                      const std::unordered_set<std::string>& SigmaAll) {
     antlr4::ANTLRInputStream input(stream);
     DOTLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     tokens.fill();
     DOTParser parser(&tokens);
-    for (const auto& ptr :
-            parser.graph()->stmt_list()->stmt()) {
+    for (const auto& ptr : parser.graph()->stmt_list()->stmt()) {
         visitStmt(ptr);
     }
 
@@ -61,6 +61,8 @@ FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream, con
             }
         }
     }
+    std::ofstream testing{"testing222.dot"};
+    result.dot(testing, false);
     return result;
 }
 
@@ -90,7 +92,12 @@ antlrcpp::Any ParseFFLOATDot::visitEdge_stmt(DOTParser::Edge_stmtContext *contex
                     FLLOATSimplePropParser parser;
                     std::stringstream ss;
                     ss.str(val);
-                    parsing_result.addNewEdgeFromId(srcId, dstId, parser.parse(ss));
+                    auto f = parser.parse(ss);
+                    if (this->need_back_conversion) {
+                        parsing_result.addNewEdgeFromId(srcId, dstId, f.replace_with_unique_name(*this->back_conv));
+                    } else {
+                        parsing_result.addNewEdgeFromId(srcId, dstId, f);
+                    }
                 }
             }
         }

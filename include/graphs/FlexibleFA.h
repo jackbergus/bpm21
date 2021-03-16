@@ -35,6 +35,7 @@
 #include <variant>
 #include <cassert>
 #include <graphs/NodeLabelBijectionFA.h>
+#include <iostream>
 
 template <typename NodeElement, typename EdgeLabel>
 class FlexibleFA : public FlexibleGraph<NodeElement, EdgeLabel> {
@@ -263,6 +264,8 @@ public:
         auto allNodeIds = getNodeIds();
         all.insert(allNodeIds.begin(), allNodeIds.end());
 
+
+
         for (size_t initial : initial_nodes) {
             for (size_t final : final_nodes) {
                 std::unordered_set<size_t> visited_src_dst;
@@ -283,6 +286,8 @@ public:
     }
 
     FlexibleFA<size_t, NodeElement> shiftLabelsToEdges() const {
+
+        std::cout << "Shifting" << std::endl;
         FlexibleFA<size_t, NodeElement> result;
         size_t start = result.addNewNodeWithLabel(-1);
         std::unordered_map<size_t, size_t> node_id_conversion;
@@ -486,6 +491,7 @@ public:
     }
 
     FlexibleFA<NodeElement, EdgeLabel>& makeDFAAsInTheory(const std::unordered_set<EdgeLabel>& additional = {}) {
+        std::cout << "Minimize" << std::endl;
         std::unordered_set<EdgeLabel> acts = FlexibleGraph<NodeElement, EdgeLabel>::getAllActionSet();
         acts.insert(additional.begin(), additional.end());
         bool insertBottom = false;

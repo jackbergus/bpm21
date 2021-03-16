@@ -77,14 +77,16 @@ std::string input_pipeline::generate_fresh_atom() {
     return fresh_atom_label+std::to_string(count_fresh_atoms++);
 }
 
-void input_pipeline::run_pipeline(const std::string &file) {
+void input_pipeline::run_pipeline(const std::string &file, bool do_xes_renaming) {
     final_model = model;
-    init_pipeline(file);
+    init_pipeline(file, do_xes_renaming);
 
     if ((!double_map.empty()) || (!(string_map.empty()))) {
         decompose_and_atomize();
         final_model = setInterpretCompoundSubatom(model);
         std::cout << "Atomized = " << final_model << std::endl;
+    } else {
+        final_model = model;
     }
 }
 
@@ -302,12 +304,12 @@ void input_pipeline::decompose_and_atomize() {
     }
 }
 
-void input_pipeline::init_pipeline(const std::string &file) {
+void input_pipeline::init_pipeline(const std::string &file, bool do_xes_renaming) {
     DeclareModelParse mp;
     std::ifstream stream (file);
 
     std::cout << "Parsing the file, and putting it in NNF, and simplifying it!" << std::endl;
-    model = mp.load_model_to_semantics(stream).nnf().simplify().reduce().oversimplify();
+    model = mp.load_model_to_semantics(stream, do_xes_renaming, file.ends_with(".sdecl")).nnf();
     std::cout << "Model = " <<  model << std::endl;
 
     std::cout << "Collecting the atoms from the formula" << std::endl;
@@ -483,22 +485,50 @@ namespace fs = std::filesystem;
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
     FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
     FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
+    {
+        std::ofstream f{"L.dot"};
+        L.dot(f, false);
+        f.flush(); f.close();
+    }
+    {
+        std::ofstream f{"R.dot"};
+        R.dot(f, false);
+        f.flush(); f.close();
+    }
     FlexibleFA<size_t, std::string> result;
-    FlexibleFA<size_t, std::string> productGraph = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R).shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
+    auto itnM = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R);
+    {
+        std::ofstream f{"itnM.dot"};
+        itnM.dot(f, false);
+        f.flush(); f.close();
+    }
+    FlexibleFA<size_t, std::string> productGraph = itnM.shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
     minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
     return result;
 }
 
 FlexibleFA<size_t, std::string>
 input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
-                                               const std::string &single_line_clause_file) {
+                                               const std::string &single_line_clause_file, bool safely_map_names) {
 #if 1
     //std::vector<std::string> SigmaVector;
     //SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
     std::vector<FlexibleFA<size_t, std::string>> GraphVector;
+    std::vector<ltlf> formulas_to_dfas;
     size_t N_graphs = 0;
+    std::unordered_map<std::string, std::string> old_name_to_new, new_name_to_old;
+
+    if (safely_map_names) {
+        size_t i = 0;
+        for (const std::string& act : atom_universe) {
+            std::string local = "a"+std::to_string(i);
+            old_name_to_new[act] = local;
+            new_name_to_old[local] = act;
+            i++;
+        }
+    }
+
     {
-        std::vector<ltlf> formulas_to_dfas;
         if (formula.casusu == AND) {
             auto falsehood = ltlf::True().negate().simplify();
             auto truth = ltlf::True();
@@ -517,11 +547,23 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
                 if (doNotInsert) {
                     set.clear();
                 }
-                formulas_to_dfas.insert(formulas_to_dfas.end(), set.begin(), set.end());
+                for (const auto& f : set) {
+                    if (safely_map_names) {
+                        formulas_to_dfas.emplace_back(f.replace_with_unique_name(old_name_to_new));
+                    } else {
+                        formulas_to_dfas.emplace_back(f);
+                    }
+                }
             }
         } else {
-            formulas_to_dfas.emplace_back(formula);
+            if (safely_map_names) {
+                formulas_to_dfas.emplace_back(formula.replace_with_unique_name(old_name_to_new));
+            } else {
+                formulas_to_dfas.emplace_back(formula);
+            }
         }
+
+        std::reverse(formulas_to_dfas.begin(),formulas_to_dfas.end());
 
         // Creating the actual file, to be parsed by the python script
         N_graphs = formulas_to_dfas.size();
@@ -537,6 +579,9 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
     }
 
     if (N_graphs > 0) {
+
+#define PYTHON
+#ifdef PYTHON
         // Parsing the file in Python, and then generating the sub-elements
         fs::path slcf_path = single_line_clause_file;
         pyscript.process_expression(fs::absolute(slcf_path).string());
@@ -546,9 +591,24 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
         // label expected from the label set, have thus edges to a new sink node
         for (size_t i = 1; i<=N_graphs; i++) {
             ParseFFLOATDot graph_loader;
+            graph_loader.need_back_conversion = safely_map_names;
+            graph_loader.back_conv = &new_name_to_old;
             std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
-            GraphVector.emplace_back(graph_loader.parse(graph_operand_file, SigmaAll).makeDFAAsInTheory(SigmaAll));
+            GraphVector.emplace_back(
+                    graph_loader
+                        .parse(graph_operand_file, SigmaAll)
+                        .makeDFAAsInTheory(SigmaAll)
+                        );
         }
+#else
+        size_t i = 0;
+        for (const ltlf& formula : formulas_to_dfas) {
+            lydiascript.generate_map(
+                    lydiascript.convert_formula_from_objects(formula),
+                    single_line_clause_file + "_graph_" + std::to_string(i) +".dot");
+            i++;
+        }
+#endif
     }
 
 
@@ -556,18 +616,15 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
         // If there are no graphs, return an empty graph
         return {};
     } else if (GraphVector.size() == 1) {
-        // If there is just one graph, then ensure that it is a minimal
-        // DFA by minimizing it, and then returning the outcome of the minimization
-        // FFLOAT should be already doing that, but in the meantime I also expanded
-        // the edges into the Westergaard specs. So, just to be sure!
-        FlexibleFA<size_t, std::string> G;
-        {
-            minimizeDFA<size_t, std::string>(GraphVector.at(0)).ignoreNodeLabels2(G);
-        }
+        auto G = GraphVector.at(0);
+        G.pruneUnreachableNodes();
         return G.makeDFAAsInTheory(SigmaAll);
     } else {
+        std::cout << " * First product" << std::endl;
         FlexibleFA<size_t, std::string> result = cross_product_westergaard(GraphVector.at(0), GraphVector.at(1), SigmaAll);
+
         for (size_t i = 2, N = GraphVector.size(); i<N; i++) {
+            std::cout << " * Product #" << i << std::endl;
             result = cross_product_westergaard(result, GraphVector.at(i), SigmaAll);
         }
         return result.makeDFAAsInTheory(SigmaAll);
@@ -616,3 +673,5 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
     return {};
 #endif
 }
+
+

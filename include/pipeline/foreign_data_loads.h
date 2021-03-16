@@ -32,8 +32,7 @@
 #include <unordered_map>
 #include <utils/xml_utils.h>
 
-std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &filename);
-
-std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> load_xes_with_data(const std::string &filename);
+std::vector<std::vector<std::string>> load_xes_ignore_data(const std::string &filename, bool conservative_for_pddl = true);
+std::vector<std::vector<std::pair<std::string, std::unordered_map<std::string, std::variant<std::string, double>>>>> load_xes_with_data(const std::string &filename, bool conservative_for_pddl = true);
 
 #endif //BPM21_FOREIGN_DATA_LOADS_H

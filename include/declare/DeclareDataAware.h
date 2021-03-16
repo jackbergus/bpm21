@@ -51,6 +51,7 @@ enum declare_templates {
     NotCoExistence,
     NotChainPrecedence,
     NotChainResponse,
+    NotChainSuccession,
     NotPrecedence,
     NotResponse,
     NotRespExistence,
@@ -88,6 +89,9 @@ struct DeclareDataAware {
     DeclareDataAware( DeclareDataAware&&) = default;
     DeclareDataAware& operator=(const DeclareDataAware& )=default;
     DeclareDataAware& operator=( DeclareDataAware&& )=default;
+
+    static DeclareDataAware parse_declare_non_data_string(const std::string& line);
+    static std::vector<DeclareDataAware> load_simplified_declare_model(std::ifstream &file);
 
     friend std::ostream &operator<<(std::ostream &os, const DeclareDataAware &aware);
 

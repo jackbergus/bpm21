@@ -87,17 +87,19 @@ template <typename T> struct node_recur {
         if (tmp.empty()) {
             S.emplace(min, max);
         } else {
-            T mio_min = min;
+            T mio_min = min, prevo = min;
             std::vector<std::pair<T,T>> S2;
             S2.insert(S2.end(), tmp.begin(), tmp.end());
             std::sort(S2.begin(), S2.end());
             for (const std::pair<T,T>& cp : S2) {
-                if (mio_min < (cp.first))
-                    S.emplace(mio_min, i.getPrev(cp.first));
+                auto prev = i.getPrev(cp.first);
+                if ((mio_min < (cp.first)) && (mio_min < prev))
+                    S.emplace(mio_min, prev);
                 S.emplace(cp.first, cp.second);
+                prevo = cp.second;
                 mio_min = i.getNext(cp.second);
             }
-            if (mio_min != max)
+            if ((mio_min <= max) && (prevo != mio_min))
                 S.emplace(mio_min, max);
         }
     }

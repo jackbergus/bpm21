@@ -18,9 +18,9 @@ include_directories(include)
 include_directories(submodules/json/include)
 include_directories(submodules/magic_enum/include)
 
-#add_subdirectory(submodules/lydia-full)
-#include_directories(submodules/lydia-full/lib/include)
-#include_directories(submodules/lydia-full/third_party/spdlog/include)
+add_subdirectory(submodules/lydia-full)
+include_directories(submodules/lydia-full/lib/include)
+include_directories(submodules/lydia-full/third_party/spdlog/include)
 
 find_package(Boost REQUIRED regex)
 include_directories(${BOOST_INCLUDE_DIRS})
@@ -36,6 +36,7 @@ set(pipeline
         src/pipeline/input_pipeline.cpp src/pipeline/SimpleXESSerializer.cpp include/pipeline/SimpleXESSerializer.h src/pipeline/foreign_data_loads.cpp include/pipeline/foreign_data_loads.h)
 
 set(graphs
+
 
         src/graphs/adjacency_graph.cpp
         src/graphs/minimizeDFA.cpp
@@ -75,6 +76,7 @@ add_executable(bpm21
         ${pipeline}
         ${graphs}
 
+        src/graphs/third-party-wrappers/lydia_entry_point.cpp
         src/utils/xml_utils.cpp
         src/ltlf/PropositionalizedAtomsSet.cpp
         src/utils/numeric/hash_combine.cpp
@@ -84,4 +86,4 @@ add_executable(bpm21
 
 include_directories(submodules/date/include)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES})
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia)

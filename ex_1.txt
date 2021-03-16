@@ -17,5 +17,5 @@
  * You should have received a copy of the GNU General Public License
  * along with bpm21. If not, see <http://www.gnu.org/licenses/>.
  */
-Absence(A, x > 10.0, 0)
+Absence(A, x > 10.0, 1)
 Existence(A, x < 5.0, 1)
