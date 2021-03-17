@@ -108,12 +108,17 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
     std::string N =  std::to_string(n);
     std::string converted_file = "/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/"+N+"constr";
     std::vector<std::string> LOGS;
+#if 0
+
+    LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/"+N+" CONSTRAINTS/3_mod/length_10.xes");
+#else
     for (size_t i = 0; i<=mod; i++) {
         std::string I = std::to_string(i);
         for (size_t single_len : lengths) {
             LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/"+N+" CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes");
         }
     }
+#endif
 
     input_pipeline Pip{"p"};
     Pip.run_pipeline(converted_file + ".txt", true);
@@ -285,19 +290,32 @@ segment_partition_tree<size_t, IntPrevNext> S(0, 10);
 
 void pipeline_all() {
     {
-        std::vector<size_t> lengths = {10/*,15,20,25,30*/};
-        pipeline(3, 0, lengths);
-        pipeline(5, 0, lengths);
+        std::vector<size_t> lengths = {10,15,20,25,30};
+        pipeline(3, 3, lengths);
+        pipeline(5, 3, lengths);
     }
     {
-        std::vector<size_t> lengths = {15/*,20,25,30*/};
-        pipeline(7, 0, lengths);
+        std::vector<size_t> lengths = {15,20,25,30};
+        pipeline(7, 3, lengths);
     }
     {
-        std::vector<size_t> lengths = {20/*,25,30*/};
-        pipeline(10, 0, lengths);
+        std::vector<size_t> lengths = {20,25,30};
+        pipeline(10, 3, lengths);
     }
 }
+
+void testing2() {
+    input_pipeline Pip{"p"};
+    Pip.run_pipeline( "/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing.txt", false);
+    {
+        std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing.dot"};
+        std::string single_line{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing_single_line_clause_1.txt"};
+        auto cp = Pip.atom_universe;
+        Pip.decompose_genmodel_for_tiny_graphs(cp, single_line, true).dot(f, false);
+        f.flush(); f.close();
+    }
+}
+
 
 void testing() {
     input_pipeline Pip{"p"};
@@ -306,7 +324,6 @@ void testing() {
         std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing.dot"};
         std::string single_line{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing_single_line_clause_1.txt"};
         auto cp = Pip.atom_universe;
-        cp.insert("*");
         Pip.decompose_genmodel_for_tiny_graphs(cp, single_line, true).dot(f, false);
         f.flush(); f.close();
     }
@@ -314,7 +331,7 @@ void testing() {
 
 int main() {
     //pipeline_all();
-    romano2();
+    //romano2();
     // test();
-    //testing();
+    testing2();
 }

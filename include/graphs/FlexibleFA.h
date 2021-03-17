@@ -228,32 +228,50 @@ public:
     }
 
     void dot(std::ostream& os, bool ignoreEdgeLabels = false) {
-        os << "digraph finite_state_machine {\n"
-              "    rankdir=LR;\n"
-              "    size=\"8,5\"\n";
+        os << "digraph {\n";
+              /*"    rankdir=LR;\n"
+              "    size=\"8,5\"\n";*/
+        for (size_t node_id : initial_nodes) {
+            if (removed_nodes.contains(node_id)) continue;
+            os << "\tfake" << node_id << " [style=invisible]" << std::endl;
+        }
         for (int node_id : getNodeIds()) {
             if (removed_nodes.contains(node_id)) continue;
-            std::string shape = "circle";
+            os << '\t' << node_id;
+            bool hasFinal = final_nodes.contains(node_id);
+            bool hasInitial = initial_nodes.contains(node_id);
+            if (hasFinal || hasInitial) {
+                os << " [";
+                if (hasInitial)
+                    os << "root=true";
+                if (hasFinal) {
+                    if (hasInitial) os << ' ';
+                    os << "shape=doublecircle";
+                }
+                os << "]" << std::endl;
+            } else {
+                os << std::endl;
+            }
+            /*std::string shape = "circle";
             if (final_nodes.contains(node_id)) {
                 shape = "doublecircle";
             }
             os << "node [shape = " << shape << ", label=\"" << getNodeLabel(node_id) << "\", fontsize=10] q" << node_id << ";\n";
             if (initial_nodes.contains(node_id)) {
                 os << "node [shape = point] s" << node_id << ";\n";
-            }
+            }*/
         }
-        os << "\n\n";
+        for (size_t node_id : initial_nodes) {
+            if (removed_nodes.contains(node_id)) continue;
+            os << "\tfake" << node_id << " -> " << node_id << " [style=bold]" << std::endl;
+        }
         for (int node_id : getNodeIds()) {
             if (removed_nodes.contains(node_id)) continue;
-            std::string shape = "circle";
-            if (initial_nodes.contains(node_id)) {
-                os << "s" << node_id << " -> q" << node_id << ";\n";
-            }
             for (const std::pair<EdgeLabel, int>& edge : outgoingEdges(node_id)) {
-                os << "q" << node_id << " -> q" << edge.second;
+                os << '\t' << node_id << " -> " << edge.second;
                 if (!ignoreEdgeLabels)
-                    os << " [ label = \"" << edge.first << "\"]";
-                os << ";\n";
+                    os << " [label=" << edge.first << "]";
+                os << std::endl;
             }
         }
         os << "}";
