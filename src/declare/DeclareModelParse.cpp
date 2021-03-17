@@ -208,6 +208,7 @@ ltlf DeclareModelParse::load_model_to_semantics(std::ifstream &stream, bool do_x
 
     bool first = true;
     for (const DeclareDataAware& x : V) {
+        std::cout << "----" << x.toFiniteSemantics() << std::endl;
         if (first) {
             formula = x.toFiniteSemantics().simplify();
             first = false;

@@ -78,6 +78,7 @@ std::string input_pipeline::generate_fresh_atom() {
 }
 
 void input_pipeline::run_pipeline(const std::string &file, bool do_xes_renaming) {
+    std::cout << "Model = " << model << std::endl;
     final_model = model;
     init_pipeline(file, do_xes_renaming);
 
@@ -503,16 +504,16 @@ namespace fs = std::filesystem;
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
     FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
     FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
-    /*{
+    {
         std::ofstream f{"L.dot"};
-        L.dot(f, false);
+        lhs.dot(f, false);
         f.flush(); f.close();
     }
     {
         std::ofstream f{"R.dot"};
-        R.dot(f, false);
+        rhs.dot(f, false);
         f.flush(); f.close();
-    }*/
+    }
     FlexibleFA<size_t, std::string> result;
     auto itnM = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R);
     /*{

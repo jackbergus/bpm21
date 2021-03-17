@@ -58,7 +58,7 @@ std::ostream &operator<<(std::ostream &os, const std::variant<std::string, doubl
 }
 
 void test() {
-    {
+    /*{
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_1.txt", true);
         std::unordered_set<std::string> SigmaAll;
@@ -79,7 +79,7 @@ void test() {
             Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false).dot(f, false);
             f.flush(); f.close();
         }
-    }
+    }*/
     {
         input_pipeline Pip{"fa"};
         Pip.run_pipeline("ex_2.txt", true);
@@ -333,5 +333,5 @@ int main() {
     //pipeline_all();
     //romano2();
     // test();
-    testing2();
+   // testing2();
 }

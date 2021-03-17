@@ -227,7 +227,7 @@ public:
         return os;
     }
 
-    void dot(std::ostream& os, bool ignoreEdgeLabels = false) {
+    void dot(std::ostream& os, bool ignoreEdgeLabels = false) const {
         os << "digraph {\n";
               /*"    rankdir=LR;\n"
               "    size=\"8,5\"\n";*/

@@ -97,11 +97,11 @@ ltlf map_disj(const std::vector<std::unordered_map<std::string, DataPredicate>> 
 }
 
 ltlf DeclareDataAware::toFiniteSemantics() const {
-    ltlf left = ltlf::And(ltlf::Act(left_act), map_disj(dnf_left_map)).setBeingCompound(true);
+    ltlf left = ltlf::And(ltlf::Act(left_act), map_disj(dnf_left_map)).simplify().setBeingCompound(true);
 
     ltlf right = ltlf::True();
     if (!right_act.empty()) {
-        right = ltlf::And(ltlf::Act(right_act), map_disj(dnf_right_map)).setBeingCompound(true);
+        right = ltlf::And(ltlf::Act(right_act), map_disj(dnf_right_map)).simplify().setBeingCompound(true);
     }
 
     switch (casusu) {

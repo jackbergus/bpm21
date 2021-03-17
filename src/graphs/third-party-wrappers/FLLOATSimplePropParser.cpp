@@ -33,7 +33,7 @@ ltlf FLLOATSimplePropParser::parse(std::istream &stream) {
     tokens.fill();
     FLLOATPropParser parser(&tokens);
     // Returning the simplified formula, thus in DFN and with the negation pushed towards the leaves
-    return visit(parser.statement()).as<ltlf>().nnf().simplify().reduce().oversimplify();
+    return visit(parser.statement()).as<ltlf>().nnf().simplify()/*.reduce().oversimplify()*/;
 }
 
 antlrcpp::Any FLLOATSimplePropParser::visitAtom(FLLOATPropParser::AtomContext *context) {

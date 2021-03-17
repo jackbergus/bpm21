@@ -38,6 +38,13 @@ FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream,
         visitStmt(ptr);
     }
 
+    {
+
+        std::ofstream testing{"testing111.dot"};
+        parsing_result.dot(testing, false);
+        testing.flush();
+    }
+
     FlexibleFA<size_t, std::string> result;
     std::unordered_map<size_t, size_t> idConv;
     for (size_t nodeId = 0, N = parsing_result.maximumNodeId(); nodeId<N; nodeId++) {
@@ -63,6 +70,7 @@ FlexibleFA<size_t, std::string> ParseFFLOATDot::parse(std::ifstream& stream,
     }
     std::ofstream testing{"testing222.dot"};
     result.dot(testing, false);
+    testing.flush();
     return result;
 }
 
