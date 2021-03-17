@@ -311,7 +311,7 @@ void testing2() {
         std::ofstream f{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing.dot"};
         std::string single_line{"/media/giacomo/Data/bz/CLionProjects/bpm21/data/testing_single_line_clause_1.txt"};
         auto cp = Pip.atom_universe;
-        Pip.decompose_genmodel_for_tiny_graphs(cp, single_line, true).dot(f, false);
+        Pip.decompose_genmodel_for_tiny_graphs(cp, single_line, false).dot(f, false);
         f.flush(); f.close();
     }
 }

@@ -516,7 +516,7 @@ public:
         size_t botNode = -1;
         size_t actsSize = acts.size();
         for (size_t nodeId : getNodeIds()) {
-            std::vector<std::pair<EdgeLabel, size_t>> E = FlexibleGraph<NodeElement, EdgeLabel>::outgoingEdges(nodeId);
+            std::vector<std::pair<EdgeLabel, size_t>> E = outgoingEdges(nodeId);
             if (E.size() == actsSize) continue;
             else {
                 if (!insertBottom) {

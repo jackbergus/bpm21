@@ -345,6 +345,7 @@ bool DataPredicate::isDoublePredicate() const {
     return isString;
 }
 
+
 std::variant<std::vector<std::pair<std::string, std::string>>,
         std::vector<std::pair<double, double>>> DataPredicate::decompose_into_intervals() const {
     bool isString = isStringPredicate();
@@ -439,12 +440,9 @@ std::variant<std::vector<std::pair<std::string, std::string>>,
                             std::get<0>(result).emplace_back(std::get<0>(value), PREV_STRING(std::get<0>(val)));
                         else
                             std::get<1>(result).emplace_back(std::get<1>(value), PREV_DOUBLE(std::get<1>(val)));
-                    } else if (i == (N-1)) {
-                        if (isString)
-                            std::get<0>(result).emplace_back(PREV_STRING(std::get<0>(prev)), (std::get<0>(value_upper_bound)));
-                        else
-                            std::get<1>(result).emplace_back(PREV_DOUBLE(std::get<1>(prev)), (std::get<1>(value_upper_bound)));
-                    } else {
+                    } /*else if (i == (N-1)) {
+
+                    }*/ else {
                         if (isString)
                             std::get<0>(result).emplace_back(PREV_STRING(std::get<0>(prev)), PREV_STRING(std::get<0>(val)));
                         else
@@ -453,6 +451,10 @@ std::variant<std::vector<std::pair<std::string, std::string>>,
                     prev = val;
                     i++;
                 }
+                if (isString)
+                    std::get<0>(result).emplace_back(PREV_STRING(std::get<0>(prev)), (std::get<0>(value_upper_bound)));
+                else
+                    std::get<1>(result).emplace_back(PREV_DOUBLE(std::get<1>(prev)), (std::get<1>(value_upper_bound)));
             }
             return result;
     }

@@ -258,6 +258,24 @@ input_pipeline::semantic_atom_set input_pipeline::_setInterpretCompoundSubatom(c
     assert(false);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void input_pipeline::decompose_and_atomize() {
     std::cout << "Generating the distinct intervals from the elements" << std::endl;
 
