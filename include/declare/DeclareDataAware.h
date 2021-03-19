@@ -56,7 +56,10 @@ enum declare_templates {
     NotResponse,
     NotRespExistence,
     NegSuccession,
-    NegChainSuccession
+    NegChainSuccession,
+    NegationAltResponse,
+    NegationPrecedence,
+    NegationResponse
 };
 
 #include <string>

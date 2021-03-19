@@ -148,12 +148,24 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
             return ltlf::Box(ltlf::Implies(left,
                                            ltlf::Diamond(right)));
 
+        case NegationResponse:
+            return ltlf::Neg(ltlf::Box(ltlf::Implies(left,
+                                           ltlf::Diamond(right))));
+
         case Precedence:
             return ltlf::WeakUntil(ltlf::Neg(right), left);
+
+        case NegationPrecedence:
+            return ltlf::Neg(ltlf::WeakUntil(ltlf::Neg(right), left));
 
         case AltResponse:
             return ltlf::Box(ltlf::Implies(right,
                                            ltlf::Next(ltlf::Until(left.negate(), right))));
+
+
+        case NegationAltResponse:
+            return ltlf::Neg(ltlf::Box(ltlf::Implies(right,
+                                           ltlf::Next(ltlf::Until(left.negate(), right)))));
 
         case AltPrecedence: {
             struct ltlf base = ltlf::WeakUntil(right.negate(), left);
