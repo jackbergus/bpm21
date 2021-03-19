@@ -330,7 +330,7 @@ void testing() {
 }
 
 int main() {
-    //pipeline_all();
+    pipeline_all();
     //romano2();
     // test();
    // testing2();
