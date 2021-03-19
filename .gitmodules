@@ -13,3 +13,6 @@
 [submodule "submodules/date"]
 	path = submodules/date
 	url = https://github.com/HowardHinnant/date
+[submodule "submodules/aaltaf"]
+	path = submodules/aaltaf
+	url = https://github.com/jackbergus/aaltaf
