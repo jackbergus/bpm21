@@ -36,6 +36,8 @@
 #include <cassert>
 #include <graphs/NodeLabelBijectionFA.h>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 
 template <typename NodeElement, typename EdgeLabel>
 class FlexibleFA : public FlexibleGraph<NodeElement, EdgeLabel> {
@@ -100,6 +102,19 @@ public:
         return result;
     }
 
+    virtual std::vector<size_t> outgoingEdgesWithMove(size_t n, const EdgeLabel& label) const {
+        if (removed_nodes.contains(n)) return {};
+        std::vector<size_t> result;
+        for (const std::pair<EdgeLabel, size_t>& cp : FlexibleGraph<NodeElement, EdgeLabel>::outgoingEdges(n)) {
+            if (!removed_nodes.contains(cp.second)) {
+                if (cp.first == label)
+                result.emplace_back(cp.second);
+            }
+        }
+        return result;
+    }
+
+
     virtual std::vector<std::pair<EdgeLabel, size_t>> ingoingEdges(size_t n) const override {
         if (removed_nodes.contains(n)) return {};
         std::vector<std::pair<EdgeLabel, size_t>> result;
@@ -134,6 +149,7 @@ public:
     std::unordered_map<EdgeLabel, std::unordered_set<size_t>> Move(const std::unordered_set<NodeElement>& P) const {
         std::unordered_map<EdgeLabel, std::unordered_set<size_t>> reachable;
         for (const NodeElement& p : P) {
+            if (removed_nodes.contains(p)) continue;
             for (const std::pair<EdgeLabel, size_t>& cp: outgoingEdges(p)) {
                 reachable[cp.first].insert(cp.second);
             }
@@ -141,9 +157,34 @@ public:
         return reachable;
     }
 
+    void test_correctness(const std::vector<EdgeLabel>& verifier) const {
+        assert(initial_nodes.size() == 1);
+        size_t start = *initial_nodes.begin();
+        auto it = verifier.begin();
+        std::stringstream ss;
+        while (it != verifier.end()) {
+            std::vector<size_t> v = outgoingEdgesWithMove(start, *it);
+            if (!(v.size() == 1)) {
+                std::cerr << ss.str() << std::endl;
+                std::cerr << "Failure at " << start << " @" << *it << std::endl;
+                exit(1);
+            }
+            ss << getNodeLabel(start) << "-[" << *it << "]->" << getNodeLabel(v.at(0)) << std::endl;
+            start = v.at(0);
+            it++;
+        }
+        if (!(final_nodes.contains(start))) {
+            std::cerr << ss.str() << std::endl;
+            exit(1);
+        } else {
+            //std::cout << ss.str() << std::endl;
+        }
+    }
+
     std::unordered_set<size_t> Move(const std::unordered_set<NodeElement>& P, const EdgeLabel& given) {
         std::unordered_set<size_t> reachable;
         for (const NodeElement& p : P) {
+            if (removed_nodes.contains(p)) continue;
             for (const std::pair<EdgeLabel, size_t>& cp: outgoingEdges(p)) {
                 if (cp.first == given)
                     reachable.insert(cp.second);
@@ -155,6 +196,7 @@ public:
     std::unordered_set<size_t> Move2(const std::unordered_set<size_t>& P, const EdgeLabel& given) {
         std::unordered_set<size_t> reachable;
         for (const size_t& p : P) {
+            if (removed_nodes.contains(p)) continue;
             for (const std::pair<EdgeLabel, size_t>& cp: outgoingEdges(p)) {
                 if (cp.first == given)
                     reachable.insert(cp.second);
@@ -166,6 +208,7 @@ public:
     std::unordered_map<EdgeLabel, std::unordered_set<size_t>> Move3(const std::unordered_set<size_t>& P) {
         std::unordered_map<EdgeLabel, std::unordered_set<size_t>> reachable;
         for (const size_t& p : P) {
+            if (removed_nodes.contains(p)) continue;
             for (const std::pair<EdgeLabel, size_t>& cp: outgoingEdges(p)) {
                 reachable[cp.first].insert(cp.second);
             }
@@ -228,7 +271,7 @@ public:
     }
 
     void dot(std::ostream& os, bool ignoreEdgeLabels = false) const {
-        os << "digraph {\n";
+        os << "digraph {\nrankdir=LR;\n";
               /*"    rankdir=LR;\n"
               "    size=\"8,5\"\n";*/
         for (size_t node_id : initial_nodes) {
@@ -278,29 +321,30 @@ public:
     }
 
     void pruneUnreachableNodes() {
+        //return;
+#if 1
         std::unordered_set<size_t> reached, all;
         auto allNodeIds = getNodeIds();
         all.insert(allNodeIds.begin(), allNodeIds.end());
 
-
-
         for (size_t initial : initial_nodes) {
-            for (size_t final : final_nodes) {
-                std::unordered_set<size_t> visited_src_dst;
-                FlexibleGraph<NodeElement, EdgeLabel>::g.DFSUtil(initial, final, visited_src_dst);
+            std::unordered_set<size_t> visited_src_dst;
+            FlexibleGraph<NodeElement, EdgeLabel>::g.DFSUtil(initial, visited_src_dst);
+            if (!unordered_intersection(visited_src_dst, final_nodes).empty())//Preserving the nodes only if I am able to at least reach one final state
                 reached.insert(visited_src_dst.begin(), visited_src_dst.end());
-            }
         }
 
         std::unordered_set<size_t> candidatesForRemoval = unordered_difference(all, reached);
+        std::cerr << "Removal candidates: #" << candidatesForRemoval.size() << std::endl;
         for (size_t nodeToBeRemoved : candidatesForRemoval) {
             removed_nodes.insert(nodeToBeRemoved);
             initial_nodes.erase(nodeToBeRemoved);
             final_nodes.erase(nodeToBeRemoved);
-            std::vector<size_t>& vec = FlexibleGraph<NodeElement, EdgeLabel>::nodeLabelInv.at(
+            /*std::vector<size_t>& vec = FlexibleGraph<NodeElement, EdgeLabel>::nodeLabelInv.at(
                     FlexibleGraph<NodeElement, EdgeLabel>::getNodeLabel(nodeToBeRemoved));
-            vec.erase(std::remove(vec.begin(), vec.end(), nodeToBeRemoved), vec.end());
+            vec.erase(std::remove(vec.begin(), vec.end(), nodeToBeRemoved), vec.end());*/
         }
+#endif
     }
 
     FlexibleFA<size_t, NodeElement> shiftLabelsToEdges() const {
@@ -508,9 +552,19 @@ public:
         return result;
     }
 
+    std::unordered_set<EdgeLabel> getAllActionSet() const {
+        std::unordered_set<EdgeLabel> result;
+        for (const auto& v : getNodeIds()) {
+            for (const auto& u : outgoingEdges(v)) {
+                result.emplace(u.first);
+            }
+        }
+        return result;
+    }
+
     FlexibleFA<NodeElement, EdgeLabel>& makeDFAAsInTheory(const std::unordered_set<EdgeLabel>& additional = {}) {
-        std::cout << "Minimize" << std::endl;
-        std::unordered_set<EdgeLabel> acts = FlexibleGraph<NodeElement, EdgeLabel>::getAllActionSet();
+        std::cout << "makeDFAAsInTheory" << std::endl;
+        std::unordered_set<EdgeLabel> acts = getAllActionSet();
         acts.insert(additional.begin(), additional.end());
         bool insertBottom = false;
         size_t botNode = -1;
@@ -534,6 +588,11 @@ public:
                 }
             }
         }
+        /*{
+            std::ofstream f{"3333.dot"};
+            dot(f, false);
+            f.close();
+        }*/
         return *this;
     }
 

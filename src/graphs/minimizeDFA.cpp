@@ -42,3 +42,22 @@ void marcaRec(std::pair<size_t, size_t> cp,
         marcaRec(x, M);
     }
 }
+
+void marcaRec2(std::pair<size_t, size_t> cp, size_t max_graph_id,
+              std::vector<std::variant<std::unordered_set<std::pair<size_t, size_t>>, bool>> &M) {
+    if (cp.second < cp.first)
+        std::swap(cp.first, cp.second);
+    size_t id = cp.first * max_graph_id + cp.second;
+    auto& it = M.at(id);
+    std::unordered_set<std::pair<size_t,size_t>> ls;
+    if (std::holds_alternative<std::unordered_set<std::pair<size_t,size_t>>>(it)) {
+        ls = std::get<std::unordered_set<std::pair<size_t,size_t>>>(it);
+    }
+    //std::cout << "\t\t<" << graph.getNodeLabel(it->first.first) <<',' << graph.getNodeLabel(it->first.second) << "> marked!" << std::endl;
+    M[id] = {false};
+    for (std::pair<size_t,size_t> x : ls) {
+        if (x.second < x.first)
+            std::swap(x.first, x.second);
+        marcaRec2(x,max_graph_id, M);
+    }
+}

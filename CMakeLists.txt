@@ -42,7 +42,7 @@ set(graphs
         src/graphs/minimizeDFA.cpp
         src/ltlf/westergraad_semantics/FormulaToWestergaardFA.cpp
         include/ltlf/westergraad_semantics/FormulaToWestergaardFA.h
-        include/ltlf/westergraad_semantics/WestergaardNFALabel.h src/graphs/third-party-wrappers/FLLOATScriptRunner.cpp include/graphs/third-party-wrappers/FLLOATScriptRunner.h)
+        include/ltlf/westergraad_semantics/WestergaardNFALabel.h src/graphs/third-party-wrappers/FLLOATScriptRunner.cpp include/graphs/third-party-wrappers/FLLOATScriptRunner.h fast_minimization.cpp fast_minimization.h)
 
 set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
                   antlr4/cpp/antlr4/DADLexer.cpp
@@ -85,5 +85,6 @@ add_executable(bpm21
         src/ltlf/DataPredicate.cpp)
 
 include_directories(submodules/date/include)
+add_subdirectory(submodules/aaltaf)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia)
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf)

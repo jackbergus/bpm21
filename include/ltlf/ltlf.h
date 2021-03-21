@@ -141,6 +141,7 @@ struct ltlf {
 
     bool easy_interpret(const std::string& map) const;
 
+
 private:
    void _propositionalize(std::unordered_set<std::string>& atoms, bool blockNext = false) const;
     struct ltlf _interpret(const std::unordered_set<std::string>& map) const;

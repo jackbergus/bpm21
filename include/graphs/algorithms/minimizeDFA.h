@@ -59,14 +59,18 @@ void marcaDebug(const FlexibleFA<NodeElement, EdgeLabel>& graph, std::pair<size_
     }
 }*/
 
+
+
 template<typename NodeElement, typename EdgeLabel>
 FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeElement, EdgeLabel>& graph) {
-    std::unordered_map<std::pair<size_t, size_t>, std::variant<std::unordered_set<std::pair<size_t, size_t>>, bool>> M;
+    std::cout << "minimizeDFA" << std::endl;
 
     std::vector<size_t> v = graph.getNodeIds();
     std::vector<size_t> notFinals;
     std::unordered_set<EdgeLabel> sigma;
     std::unordered_map<size_t, std::unordered_map<EdgeLabel, size_t>> localDelta;
+    std::cout << " * algorithm initialization" << std::endl;
+    size_t max_graph_id = 0;
     for (size_t qp : v) {
         if (!graph.final_nodes.contains(qp)) {
             notFinals.emplace_back(qp);
@@ -75,13 +79,19 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
             sigma.insert(edge.first);
             localDelta[qp][edge.first] = edge.second;
         }
+        max_graph_id = std::max(max_graph_id, qp);
     }
+    max_graph_id++;
+    std::unordered_map<std::pair<size_t, size_t>, std::variant<std::unordered_set<std::pair<size_t, size_t>>, bool>> M(max_graph_id);
 
+
+    std::cout << " * algorithm sorting" << std::endl;
     std::sort(v.begin(), v.end());
     {
         std::pair<size_t, size_t> cp;
         {
             for (size_t i = 0, N = v.size(); i < N; i++) {
+                std::cout << " * iteration " << i << std::endl;
                 size_t pp = v.at(i);
                 cp.first = pp;
                 for (size_t j = i + 1; j < N; j++) {
@@ -101,7 +111,9 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
             }
         }
 
+        std::cout << " * Pair" << std::endl;
         for (auto &cp2 : M) {
+
             if (!std::holds_alternative<bool>(cp2.second)) {
                 //std::cout << '<' << graph.getNodeLabel(cp2.first.first) <<',' << graph.getNodeLabel(cp2.first.second) <<'>' << std::endl;
                 bool Xfound = false;
@@ -151,6 +163,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
     {
         std::unordered_set<size_t> preserved;
         equivalence_class<size_t> cl;
+        std::cout << " * init equivalence class" << std::endl;
         for (const auto& cp : M) {
             if (!std::holds_alternative<bool>(cp.second)) {
                 size_t l = cp.first.first, r = cp.first.second;
@@ -158,6 +171,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
                 cl.insert(l, r);
             }
         }
+        std::cout << " * calculate eq class" << std::endl;
         for (const auto& cp : cl.calculateEquivalenceClass()) {
             equivalentNodes.insert(cp.second.begin(), cp.second.end());
             auto it = nodeToId.emplace(cp.second, vCount);
@@ -173,12 +187,15 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
                 full_eq_class[elements] = cp.second;
             }
         }
+
+        std::cout << " * Unordered difference" << std::endl;
         for (const auto& cp : unordered_difference(VS, equivalentNodes)) {
             full_eq_class[cp] = {cp};
             nodeToId.emplace(std::unordered_set<size_t>{cp}, result.addNewNodeWithLabel(std::vector<NodeElement>{graph.getNodeLabel(cp)}));
         }
     }
 
+    std::cout << " * graph recreation" << std::endl;
     for (size_t fin : graph.fini()) {
         result.addToFinalNodesFromId(nodeToId.at(full_eq_class.at(fin)));
     }
@@ -222,8 +239,10 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
 #endif
     }
 
-    //result.pruneUnreachableNodes();
+    result.pruneUnreachableNodes();
     return result;
 }
+
+
 
 #endif //CLASSIFIERS_MINIMIZEDFA_H

@@ -16,3 +16,6 @@
 [submodule "submodules/aaltaf"]
 	path = submodules/aaltaf
 	url = https://github.com/jackbergus/aaltaf
+[submodule "submodules/sparsemap"]
+	path = submodules/sparsemap
+	url = https://github.com/greg7mdp/sparsepp

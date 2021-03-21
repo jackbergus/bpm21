@@ -26,6 +26,7 @@
 #include <declare/DeclareModelParse.h>
 #include "pipeline/input_pipeline.h"
 #include "pipeline/SimpleXESSerializer.h"
+#include "../../fast_minimization.h"
 
 #ifdef TRUE
 #undef TRUE
@@ -465,7 +466,7 @@ input_pipeline::convert_trace_labels(const std::string &file, std::unordered_set
     return toCanonicalTraces(data_log,  SigmaAll);
 }
 
-void input_pipeline::print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
+std::vector<std::vector<std::string>> input_pipeline::print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
                                            std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes) {
     const auto log = convert_trace_labels(input_file, SigmaAll, serialize_original_to_xes);
     {
@@ -483,6 +484,7 @@ void input_pipeline::print_atomized_traces(const std::string &input_file, const 
             }
         }
     }
+    return log;
 
 }
 
@@ -522,7 +524,9 @@ FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_
         f.flush(); f.close();
     }*/
     FlexibleFA<size_t, std::string> productGraph = itnM.shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
+    //result = fast_minimization(productGraph);
     minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
+    ///result = fast_minimization(productGraph);
     return result;
 }
 
@@ -613,11 +617,15 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
             graph_loader.need_back_conversion = safely_map_names;
             graph_loader.back_conv = &new_name_to_old;
             std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
-            GraphVector.emplace_back(
+            auto l = GraphVector.emplace_back(
                     graph_loader
                         .parse(graph_operand_file, SigmaAll)
                         .makeDFAAsInTheory(SigmaAll)
                         );
+            {
+                std::ofstream graph_operand_file_after{single_line_clause_file + "_graphAfter_" + std::to_string(i) +".dot"};
+                l.dot(graph_operand_file_after, false);
+            }
         }
 #else
         size_t i = 0;

@@ -105,6 +105,11 @@ void test() {
 }
 
 void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
+
+    std::unordered_set<size_t> to_test_correct;
+    std::set<std::vector<std::string>> relevant_traces;
+    std::vector<std::vector<std::vector<std::string>>> M;
+
     std::string N =  std::to_string(n);
     std::string converted_file = "/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/"+N+"constr";
     std::vector<std::string> LOGS;
@@ -115,6 +120,8 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
     for (size_t i = 0; i<=mod; i++) {
         std::string I = std::to_string(i);
         for (size_t single_len : lengths) {
+            if (i == 0)
+                to_test_correct.insert(LOGS.size());
             LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/"+N+" CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes");
         }
     }
@@ -133,17 +140,86 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
         Pip.print_sigma(f);
     }
     {
+        size_t i = 0;
         for (const std::string& elements : LOGS) {
             std::cout << "\t\t- log dumping: " << elements << std::endl;
-            Pip.print_atomized_traces(elements, elements+"_atomized_1", SigmaAll, true);
+            auto log = Pip.print_atomized_traces(elements, elements+"_atomized_1", SigmaAll, true);
+            if (to_test_correct.contains(i)) {
+                std::cout << "\t\t\t adding relevant traces" << elements << std::endl;
+                M.emplace_back(log);
+            }
+            i++;
         }
     }
     {
         std::ofstream f{converted_file+"_graph.dot"};
         std::string single_line{converted_file+"_single_line_clause.txt"};
-        Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false).dot(f, false);
+        auto g= Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false);
+        g.dot(f, false);
         f.flush(); f.close();
+        for (const std::vector<std::vector<std::string>>& log : M) {
+            size_t j = 1;
+            for (const std::vector<std::string>& trace : log) {
+                std::cout << trace.size() << " testing " << j << "..." << std::endl;
+                g.test_correctness(trace);
+                j++;
+            }
+        }
     }
+}
+
+void specific_testing() {
+    input_pipeline Pip{"p"};
+    std::cout << "run_pipeline" << std::endl;
+    Pip.run_pipeline("/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/3constr_testing.txt", true);
+
+    std::unordered_set<size_t> to_test_correct;
+    std::unordered_set<std::string> SigmaAll;
+    std::vector<std::string> LOGS;
+    std::set<std::vector<std::string>> relevant_traces;
+    for (size_t i = 0; i<=0; i++) {
+        std::string I = std::to_string(i);
+        for (size_t single_len : {10,15,20,25,30}) {
+            if (std::filesystem::exists("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes")) {
+                if (i == 0)
+                    to_test_correct.insert(LOGS.size());
+                std::cout << "()Adding to vector: /media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes" << std::endl;
+                LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/3 CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes");
+            }
+        }
+    }
+    {
+        std::ofstream f{"3_sigma.txt"};
+        Pip.print_sigma(f);
+    }
+    std::vector<std::vector<std::vector<std::string>>> M;
+    size_t i = 0;
+    for (const std::string& elements : LOGS) {
+        std::cout << "\t\t- log dumping: " << elements << std::endl;
+        auto log = Pip.print_atomized_traces(elements, elements+"_atomized_1", SigmaAll, true);
+        if (to_test_correct.contains(i)) {
+            std::cout << "\t\t\t adding relevant traces" << elements << std::endl;
+            M.emplace_back(log);
+        }
+        i++;
+    }
+    {
+        std::ofstream f{"3_graph.dot"};
+        std::string single_line{"3_single_line_clause.txt"};
+        std::cout << " Decomposing the operand " << std::endl;
+        auto g = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false);
+        g.dot(f, false);
+        f.flush(); f.close();
+        for (const std::vector<std::vector<std::string>>& log : M) {
+            size_t j = 1;
+            for (const std::vector<std::string>& trace : log) {
+                std::cout << trace.size() << " testing " << j << "..." << std::endl;
+                g.test_correctness(trace);
+                j++;
+            }
+        }
+    }
+
 }
 
 void romano() {
@@ -289,15 +365,15 @@ segment_partition_tree<size_t, IntPrevNext> S(0, 10);
 }
 
 void pipeline_all() {
-    {
+    /*{
         std::vector<size_t> lengths = {10,15,20,25,30};
         pipeline(3, 3, lengths);
         pipeline(5, 3, lengths);
-    }
-    {
+    }*/
+    /*{
         std::vector<size_t> lengths = {15,20,25,30};
         pipeline(7, 3, lengths);
-    }
+    }*/
     {
         std::vector<size_t> lengths = {20,25,30};
         pipeline(10, 3, lengths);
@@ -329,9 +405,32 @@ void testing() {
     }
 }
 
+void testing3() {
+    input_pipeline Pip{"p"};
+    Pip.run_pipeline( "/media/giacomo/Data/bz/CLionProjects/bpm21/data/trient/learner/pos.sdecl", false);
+    std::unordered_set<std::string> SigmaAll;
+    {
+        std::ofstream f{"eq_classes_2.txt"};
+        Pip.print_equivalence_classes(f);
+    }
+    {
+        Pip.print_atomized_traces("log_2.txt", "log_atomized_2", SigmaAll, true);
+    }
+    {
+        std::ofstream f{"ex_2_sigma.txt"};
+        Pip.print_sigma(f);
+    }
+}
+
+
+
+
 int main() {
-    pipeline_all();
+
+    //specific_testing();
+    //testing3();
+   pipeline_all();
     //romano2();
-    // test();
+    //test();
    // testing2();
 }

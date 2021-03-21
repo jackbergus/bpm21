@@ -66,7 +66,7 @@ struct input_pipeline {
 
     void print_equivalence_classes(std::ostream &os);
     void print_sigma(std::ostream& os);
-    void print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
+    std::vector<std::vector<std::string>> print_atomized_traces(const std::string &input_file, const std::string &file_text_and_xes,
                                std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes);
 
     void run_pipeline(const std::string &file, bool do_xes_renaming = true);
