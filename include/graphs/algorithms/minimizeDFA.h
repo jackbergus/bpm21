@@ -156,13 +156,14 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
     //std::unordered_map<std::pair<size_t, size_t>, std::variant<std::unordered_set<std::pair<size_t, size_t>>, bool>> M(max_graph_id);
     std::vector<table_content> M(Tabsize);
 
-    std::cout << " * algorithm sorting" << std::endl;
-    std::sort(v.begin(), v.end());
+    //std::cout << " * algorithm sorting" << std::endl;
+    //std::sort(v.begin(), v.end());
     adjacency_graph graph_tr_clos;
     {
+        std::cout << " * staircase table fill-up" << std::endl;
         {
             for (size_t j = 0; j < V; j++) {
-                assert( j == graph_tr_clos.add_node() );
+                graph_tr_clos.add_node();
                 size_t qp = v.at(j);
                 for (size_t i = 0; i < j; i++) {
                     size_t pp = v.at(i);
@@ -179,11 +180,12 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         std::cout << " * Pair" << std::endl;
         for (size_t pos = 0, tabPos = M.size(); pos<tabPos; pos++) {
             auto cp2 = &M[pos];
-            size_t left = cp2->left;
-            size_t right = cp2->right;
             if (!cp2->is_bool) {
+                size_t left = cp2->left;
+                size_t right = cp2->right;
                 bool Xfound = false;
                 std::vector<size_t> L;
+                L.reserve(V);
                 for (const auto &a : sigma) {
                     size_t cp_first = localDelta[left][a];
                     size_t cp_second = localDelta[right][a];
@@ -202,6 +204,8 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
 
                 }
                 if (!Xfound) {
+                    std::sort( L.begin(), L.end() );
+                    L.erase( std::unique( L.begin(), L.end() ), L.end() );
                     for (const size_t &cp3 : L) {
                         M[cp3].S.emplace_back(pos);
                     }
@@ -222,8 +226,6 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         if (!cp->is_bool) {
             equivalentNodes.insert(l);
             equivalentNodes.insert(r);
-            //trivial_eq_map[l].insert(r);
-            //trivial_eq_map[r].insert(l);
             graph_tr_clos.add_undirected_edge(l, r);
         }
     }
@@ -244,37 +246,10 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
             eq_map.emplace(visited, result.addNewNodeWithLabel(nl));
         }
     }
-    /*for (size_t k = 0; k < V; k++){
-        auto& refK = trivial_eq_map[k];
-        for (size_t i = 0; i < V; i++) {
-            auto& refI = trivial_eq_map[i];
-            for (size_t j = 0; j < V; j++) {
-                if (refI.contains(k) && refK.contains(j)) {
-                    refI.insert(j);
-                }
-            }
-        }
-    }
-
-    for (const std::unordered_set<size_t>& ref : trivial_eq_map) {
-        if (ref.empty()) continue;
-        auto it = eq_map.emplace(ref, 0);
-        if (it.second) {
-            std::cout << "{" << std::endl;
-            for (size_t id : ref)
-                std::cout << node_labels[id] << ",";
-            std::cout << "}"  << std::endl;
-            std::vector<NodeElement> nl;
-            for (const size_t& x : ref) {
-                nl.emplace_back(node_labels[x]);
-            }
-            it.first->second = result.addNewNodeWithLabel(nl);
-        }
-    }*/
 
     std::cout << " * Unordered difference" << std::endl;
     for (const auto& cp : unordered_difference(VS, equivalentNodes)) {
-        std::cout << cp << std::endl;
+        //std::cout << cp << std::endl;
         trivial_eq_map[cp] = {cp};
         eq_map[{cp}] = result.addNewNodeWithLabel({node_labels[cp]});
     }
@@ -293,10 +268,10 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
 
     for (const auto& node : eq_map) {
         assert(!node.first.empty());
-        std::cout << "{" ;
+        /*std::cout << "{" ;
         for (size_t id : node.first)
             std::cout << node_labels[id] << ",";
-        std::cout << "} == " << eq_map.at(node.first) << std::endl;
+        std::cout << "} == " << eq_map.at(node.first) << std::endl;*/
 
         std::unordered_map<EdgeLabel, std::unordered_set<size_t>> reachable_in_old_graph;
         for (const size_t& p : node.first) {

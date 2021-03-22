@@ -46,8 +46,10 @@ void marcaRec(std::pair<size_t, size_t> cp,
 void marcaRec3(size_t M_offset, std::vector<table_content> &M) {
     auto& ref = M[M_offset];
     if (!ref.is_bool) {
-        std::unordered_set<size_t> ls;
-        ls.insert(ref.S.begin(), ref.S.end());
+        std::vector<size_t> ls;
+        std::swap(ls, ref.S);
+        std::sort( ls.begin(), ls.end() );
+        ls.erase( std::unique( ls.begin(), ls.end() ), ls.end() );
         ref = {false, ref.left, ref.right};
         for (size_t offset2 : ls) {
             marcaRec3(offset2, M);

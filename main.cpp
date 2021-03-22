@@ -372,7 +372,7 @@ void pipeline_all() {
     }
     {
         std::vector<size_t> lengths = {15/*,20,25,30*/};
-        pipeline(7, 0, lengths);
+        //pipeline(7, 0, lengths);
     }
     {
         std::vector<size_t> lengths = {20/*,25,30*/};
