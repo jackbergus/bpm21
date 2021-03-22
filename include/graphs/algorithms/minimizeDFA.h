@@ -158,9 +158,11 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
 
     std::cout << " * algorithm sorting" << std::endl;
     std::sort(v.begin(), v.end());
+    adjacency_graph graph_tr_clos;
     {
         {
             for (size_t j = 0; j < V; j++) {
+                assert( j == graph_tr_clos.add_node() );
                 size_t qp = v.at(j);
                 for (size_t i = 0; i < j; i++) {
                     size_t pp = v.at(i);
@@ -208,9 +210,9 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         }
     }
 
-
+    using bitset = boost::dynamic_bitset<>;
     std::cout << " * Equivalence Classes" << std::endl;
-    std::vector<std::unordered_set<size_t>> trivial_eq_map(V, std::unordered_set<size_t>(V));
+    std::vector<std::unordered_set<size_t>> trivial_eq_map(V);
     std::unordered_set<size_t> equivalentNodes, VS;
     VS.insert(v.begin(), v.end());
     for (size_t pos = 0, tabPos = M.size(); pos<tabPos; pos++) {
@@ -220,13 +222,29 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         if (!cp->is_bool) {
             equivalentNodes.insert(l);
             equivalentNodes.insert(r);
-            trivial_eq_map[l].insert(r);
-            trivial_eq_map[r].insert(l);
+            //trivial_eq_map[l].insert(r);
+            //trivial_eq_map[r].insert(l);
+            graph_tr_clos.add_undirected_edge(l, r);
         }
     }
 
     std::cout << " * Transitive Closure" << std::endl;
-    for (size_t k = 0; k < V; k++){
+    std::vector<bool> visited_E(V, false);
+    std::unordered_map<std::unordered_set<size_t>, size_t> eq_map;
+    for (size_t k : equivalentNodes) {
+        if (!visited_E[k]) {
+            std::unordered_set<size_t> visited;
+            graph_tr_clos.DFSUtil(k, visited);
+            std::vector<NodeElement> nl;
+            for (size_t x : visited) {
+                trivial_eq_map[x] = visited;
+                visited_E[x] = true;
+                nl.emplace_back(node_labels[x]);
+            }
+            eq_map.emplace(visited, result.addNewNodeWithLabel(nl));
+        }
+    }
+    /*for (size_t k = 0; k < V; k++){
         auto& refK = trivial_eq_map[k];
         for (size_t i = 0; i < V; i++) {
             auto& refI = trivial_eq_map[i];
@@ -238,11 +256,11 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         }
     }
 
-    std::unordered_map<std::unordered_set<size_t>, size_t> eq_map;
     for (const std::unordered_set<size_t>& ref : trivial_eq_map) {
         if (ref.empty()) continue;
         auto it = eq_map.emplace(ref, 0);
         if (it.second) {
+            std::cout << "{" << std::endl;
             for (size_t id : ref)
                 std::cout << node_labels[id] << ",";
             std::cout << "}"  << std::endl;
@@ -252,7 +270,8 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
             }
             it.first->second = result.addNewNodeWithLabel(nl);
         }
-    }
+    }*/
+
     std::cout << " * Unordered difference" << std::endl;
     for (const auto& cp : unordered_difference(VS, equivalentNodes)) {
         std::cout << cp << std::endl;

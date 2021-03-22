@@ -54,7 +54,7 @@ struct adjacency_graph {
     const std::vector<size_t>& getOutgoingEdgesId(size_t node_id) const;
     const std::vector<size_t>& getIngoingEdgesId(size_t node_id) const;
     void DFSUtil(size_t src, std::unordered_set<size_t>& visited);
-    void DFSUtil(size_t u, size_t d,  std::unordered_set<size_t>& visited_src_dst);
+
     void dot(std::ostream& os);
 
 private:

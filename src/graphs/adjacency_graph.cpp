@@ -64,14 +64,6 @@ void adjacency_graph::DFSUtil(size_t src, std::unordered_set<size_t> &visited) {
     }
 }
 
-void adjacency_graph::DFSUtil(size_t u, size_t d, std::unordered_set<size_t> &visited_src_dst) {
-    std::unordered_set<size_t> visited;
-    std::vector<ssize_t> path(V_size, -1);
-    size_t path_index = 0;
-    std::unordered_set<size_t> visited_src_dst_global;
-    printAllPathsUtil(u, d, visited, path, path_index, visited_src_dst, visited_src_dst_global);
-}
-
 void adjacency_graph::dot(std::ostream &os) {
     os << "digraph finite_state_machine {\n"
           "    rankdir=LR;\n"
