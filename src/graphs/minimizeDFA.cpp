@@ -43,21 +43,34 @@ void marcaRec(std::pair<size_t, size_t> cp,
     }
 }
 
-void marcaRec2(std::pair<size_t, size_t> cp, size_t max_graph_id,
-              std::vector<std::variant<std::unordered_set<std::pair<size_t, size_t>>, bool>> &M) {
-    if (cp.second < cp.first)
-        std::swap(cp.first, cp.second);
-    size_t id = cp.first * max_graph_id + cp.second;
-    auto& it = M.at(id);
-    std::unordered_set<std::pair<size_t,size_t>> ls;
-    if (std::holds_alternative<std::unordered_set<std::pair<size_t,size_t>>>(it)) {
-        ls = std::get<std::unordered_set<std::pair<size_t,size_t>>>(it);
+void marcaRec3(size_t M_offset, std::vector<table_content> &M) {
+    auto& ref = M[M_offset];
+    if (!ref.is_bool) {
+        std::unordered_set<size_t> ls;
+        ls.insert(ref.S.begin(), ref.S.end());
+        ref = {false, ref.left, ref.right};
+        for (size_t offset2 : ls) {
+            marcaRec3(offset2, M);
+        }
     }
-    //std::cout << "\t\t<" << graph.getNodeLabel(it->first.first) <<',' << graph.getNodeLabel(it->first.second) << "> marked!" << std::endl;
-    M[id] = {false};
-    for (std::pair<size_t,size_t> x : ls) {
-        if (x.second < x.first)
-            std::swap(x.first, x.second);
-        marcaRec2(x,max_graph_id, M);
+
+}
+
+/*
+void marcaRec2(size_t cp, size_t max_V, std::vector<table_content> &M) {
+    size_t cp_second = DOVETAIL_RIGHT(cp, max_V);
+    size_t cp_first = DOVETAIL_LEFT(cp, max_V);
+    if (cp_second < cp_first)
+        std::swap(cp_first, cp_second);
+    auto it = &M[cp];
+    //std::cout << "\t\t{" << cp_first <<';' << cp_second << "} marked!" << std::endl;
+    *it = {false, std::make_pair(cp_first, cp_second)};
+    if (it->is_set) for (size_t x : it->S) {
+        size_t x_second = DOVETAIL_RIGHT(x, max_V);
+        size_t x_first = DOVETAIL_LEFT(x, max_V);
+        if (x_second < x_first)
+            std::swap(x_first, x_second);
+        marcaRec2(DOVETAIL(x_first, x_second, max_V), max_V, M);
     }
 }
+*/

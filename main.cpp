@@ -365,18 +365,18 @@ segment_partition_tree<size_t, IntPrevNext> S(0, 10);
 }
 
 void pipeline_all() {
-    /*{
-        std::vector<size_t> lengths = {10,15,20,25,30};
-        pipeline(3, 3, lengths);
-        pipeline(5, 3, lengths);
-    }*/
-    /*{
-        std::vector<size_t> lengths = {15,20,25,30};
-        pipeline(7, 3, lengths);
-    }*/
     {
-        std::vector<size_t> lengths = {20,25,30};
-        pipeline(10, 3, lengths);
+        std::vector<size_t> lengths = {10/*,15,20,25,30*/};
+        //pipeline(3, 0, lengths);
+        //pipeline(5, 0, lengths);
+    }
+    {
+        std::vector<size_t> lengths = {15/*,20,25,30*/};
+        pipeline(7, 0, lengths);
+    }
+    {
+        std::vector<size_t> lengths = {20/*,25,30*/};
+        pipeline(10, 0, lengths);
     }
 }
 
@@ -431,6 +431,6 @@ int main() {
     //testing3();
    pipeline_all();
     //romano2();
-    //test();
+   // test();
    // testing2();
 }
