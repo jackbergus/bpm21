@@ -16,3 +16,6 @@
 [submodule "submodules/probtrace"]
 	path = submodules/probtrace
 	url = https://github.com/jackbergus/approxProbTraceAlign
+[submodule "submodules/aaltaf"]
+	path = submodules/aaltaf
+	url = https://github.com/jackbergus/aaltaf
