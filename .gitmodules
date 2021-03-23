@@ -19,3 +19,6 @@
 [submodule "submodules/aaltaf"]
 	path = submodules/aaltaf
 	url = https://github.com/jackbergus/aaltaf
+[submodule "submodules/eigen"]
+	path = submodules/eigen
+	url = https://gitlab.com/libeigen/eigen
