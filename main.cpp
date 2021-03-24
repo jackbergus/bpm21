@@ -102,27 +102,37 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
         }
     }
 
-    Eigen::MatrixXd tmp ;
-    {
-        A.setFromTriplets(tripletList.begin(), tripletList.end());
-        //SpMat BTB = A.transpose() * A;
+    A.setFromTriplets(tripletList.begin(), tripletList.end());
+    //SpMat BTB = A.transpose() * A;
 
-        // Diagonal matrix D
-        Eigen::VectorXd rowSums = (A * Eigen::VectorXd::Ones(A.cols())); // A -> BTB
-        for (size_t i = 0, O = rowSums.size(); i<O; i++) {
-            rowSums(i) = std::sqrt(rowSums(i));
+    // Diagonal matrix D
+    Eigen::VectorXd rowSums = (A * Eigen::VectorXd::Ones(A.cols())); // A -> BTB
+    for (size_t i = 0, O = rowSums.size(); i<O; i++) {
+        rowSums(i) = std::sqrt(rowSums(i));
+    }
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> diagonal_matrix(N);
+    diagonal_matrix.diagonal() = rowSums;
+
+    SpMat L = diagonal_matrix * A * diagonal_matrix;
+    double gamma = 1.0/((L * Eigen::VectorXd::Ones(L.cols())).maxCoeff());
+
+
+
+    SpMat I(N, N);
+    I.setIdentity();
+    SpMat tmp = I - (gamma * L);
+
+    for (int k = 0; k < tmp.outerSize(); ++k){
+        for (SpMat::InnerIterator it(tmp, k); it; ++it){
+            size_t i = it.row();
+            size_t j = it.col();
+            std::cout << '(' << i <<','<<j<< ") = " << it.value() << std::endl;
         }
-        Eigen::DiagonalMatrix<double, Eigen::Dynamic> diagonal_matrix(N);
-        diagonal_matrix.diagonal() = rowSums;
-
-        SpMat L = diagonal_matrix * A * diagonal_matrix;
-        double gamma = (L * Eigen::VectorXd::Ones(L.cols())).maxCoeff();
-
-        SpMat I(N, N);
-        I.setIdentity();
-        tmp = I - (gamma * L);
-
-        /*for (int k = 0; k < BTB.outerSize(); ++k){
+    }
+    exit(1);
+#if 0
+    {
+        for (int k = 0; k < BTB.outerSize(); ++k){
             for (SpMat::InnerIterator it(BTB, k); it; ++it){
                 size_t i = it.row();
                 size_t j = it.col();
@@ -131,8 +141,9 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
                 it.valueRef() = ((i == j) ? 1.0 : 0.0) -
                                     ((inv_maxCoeff * (it.value() - further)) / (rowSums(i)*rowSums(j)));
             }
-        }*/
+        }
     }
+#endif
     /*double det = tmp.determinant();
     if (det == 0.0) {
         return det;
@@ -140,15 +151,19 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
         // ERROR: the data apparently violates the assumption
         Eigen::VectorXd b(N);
         b.setOnes();
+#if 0
+
         return tmp.partialPivLu().solve(b).sum();
-        /*Eigen::SimplicialLLT<SpMat> solver;
+#else
+        Eigen::SimplicialLLT<SpMat> solver;
 
         solver.compute(tmp);
         if (solver.info() != Eigen::Success) {
             return 0.0;
         }
         Eigen::VectorXd x = solver.solve(b);
-        return x.sum();*/
+        return x.sum();
+#endif
     }
 }
 
@@ -267,7 +282,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         ref.pos_model = Pip.model;
         FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
         ref.pos_global_graph = pos_graph.shiftLabelsToNodes();
-        ref.pos_graph_size = ref.pos_global_graph.size();
+        ref.pos_graph_size = /*ref.pos_global_graph*/pos_graph.size();
         auto final_pos = Pip.final_model;
         {
             std::stringstream ss;
@@ -281,7 +296,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         ref.neg_model = Pip.model;
         FlexibleFA<size_t, std::string> neg_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
         ref.neg_global_graph = neg_graph.shiftLabelsToNodes();
-        ref.neg_graph_size = ref.neg_global_graph.size();
+        ref.neg_graph_size = /*ref.neg_global_graph*/neg_graph.size();
         auto final_neg = Pip.final_model;
         {
             std::stringstream ss;
@@ -345,7 +360,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                     if (inc == 0.0) {
                         FlexibleFA<size_t, std::string> pos_graph =  Pip.lydia_script.generate_graph(SigmaAll,conj_pos);
                         std::cout << "° Positive datasets" << std::endl;
-                        print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph.shiftLabelsToNodes().size());
+                        print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph/*.shiftLabelsToNodes()*/.size());
                     }
                 }
                 {
@@ -359,7 +374,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                     if (inc == 0.0) {
                         FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,conj_neg);
                         std::cout << "° Negative datasets" << std::endl;
-                        print_syntax_metrics(std::cout, leftI.neg_graph_size, leftJ.neg_graph_size, pos_graph.shiftLabelsToNodes().size());
+                        print_syntax_metrics(std::cout, leftI.neg_graph_size, leftJ.neg_graph_size, pos_graph/*.shiftLabelsToNodes()*/.size());
                     }
                 }
 
