@@ -644,6 +644,7 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
         }
     }
 
+#ifdef USE_FLLOAT
     if (N_graphs > 0) {
         // Parsing the file in Python, and then generating the sub-elements
         fs::path slcf_path = single_line_clause_file;
@@ -668,6 +669,7 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
             }
         }
     }
+#endif
 
 
     if (useLydia) {

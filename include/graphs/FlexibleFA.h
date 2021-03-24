@@ -450,9 +450,11 @@ public:
         return result;
     }
 
+
+
     template <typename NL, typename EL>
     static FlexibleFA<NL, EL> crossProductWithNodeLabels(FlexibleFA<NL, EL>& lhs,
-                                                         FlexibleFA<NL, EL>& rhs) {
+                                                         FlexibleFA<NL, EL>& rhs, bool doPruning = true) {
 
         // Performing the node label's intersection
         typename std::unordered_map<NL, std::vector<size_t>>::iterator beg, end;
@@ -547,7 +549,7 @@ public:
                 }
             }
         }
-        result.pruneUnreachableNodes();
+        if (doPruning) result.pruneUnreachableNodes();
         return result;
     }
 

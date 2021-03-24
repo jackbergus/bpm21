@@ -3,7 +3,7 @@
 mkdir -p antlr4/cpp
 
 # Installing the required packages
-sudo apt-get install -y uuid-dev maven
+sudo apt-get install -y uuid-dev maven libopenblas-dev liblapacke-dev libhwloc-dev libscotch-dev libscotch-dev libscotch-6.0
 
 ## Pulling the repositories
 git submodule update --init --recursive

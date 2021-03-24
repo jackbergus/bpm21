@@ -41,16 +41,16 @@ void print_syntax_metrics(std::ostream& out, double d1, double d2, double d3) {
     out << " Syntactic distances " << std::endl;
     out << " a) Straightforward normalization " << std::endl;
     {
-        double d1L = (d3 <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() : 1.0-(d1)/d3;
-        double d2L = (d3 <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() :1.0-(d2)/d3;
+        double d1L = (d3 <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() : 1.0-(std::min(d1,d3))/std::max(d3,d1);
+        double d2L = (d3 <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() :1.0-(std::min(d2,d3))/std::max(d3,d2);
         out << "    * Left distance from intersection: " << d1L << std::endl;
         out << "    * Right distance from intersection: " << d2L << std::endl;
         out << "    * Left distance from Right (Avg): " << ((d3 <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() :((d1L+d2L)/2.0)) << std::endl;
     }
     out << " b) Kernel-based normalization " << std::endl;
     {
-        double d1L = ((d1*d3) <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() : std::sqrt(1.0 - 1.0*(d1/std::sqrt(d1*d3)));
-        double d2L = ((d2*d3) <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() : std::sqrt(1.0 - 1.0*(d2/std::sqrt(d2*d3)));
+        double d1L = /*((d1*d3) <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() :*/ std::sqrt(1.0 - 1.0*(std::min(d1,d3)/std::sqrt(d1*d3)));
+        double d2L = /*((d2*d3) <= std::numeric_limits<double>::min()) ? std::numeric_limits<double>::infinity() :*/ std::sqrt(1.0 - 1.0*(std::min(d2,d3)/std::sqrt(d2*d3)));
         out << "    * Left distance from intersection: " << d1L << std::endl;
         out << "    * Right distance from intersection: " << d2L << std::endl;
         out << "    * Left distance from Right (Avg): " << ((d1L+d2L)/2.0) << std::endl;
@@ -62,9 +62,11 @@ void print_syntax_metrics(std::ostream& out, double d1, double d2, double d3) {
 #include <Eigen/Dense>
 #include <Eigen/LU>
 #include <formula/aalta_formula.h>
+#include<Eigen/SparseCholesky>
+#include <wrappers/aaltaf_wrapper.h>
 
-double between_graph_classification_simple_kernel(const FlexibleFA<std::string, size_t>& left, const FlexibleFA<std::string, size_t>& right) {
-    auto U = left.getNodeIds();
+double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right) {
+    /*auto U = left.getNodeIds();
     size_t N = U.size();
     auto V = right.getNodeIds();
     size_t M = V.size();
@@ -81,58 +83,63 @@ double between_graph_classification_simple_kernel(const FlexibleFA<std::string, 
         for (size_t i = M; i<N; i++) {
             mapR[U.at(i)] = i;
         }
-    }
-    std::vector<bool> W(N*M, 0.0);
-    typedef Eigen::SparseMatrix<double> SpMat;
+    }*/
+    typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SpMat;
     typedef Eigen::Triplet<double> T;
     std::vector<T> tripletList;
-    tripletList.reserve(left.maximumEdgeId()*right.maximumEdgeId());
-    SpMat A(N*M,N*M);
+    // Only among the nodes performing the match
+    FlexibleFA<std::string, size_t> g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(left, right);
 
-    size_t n = 0;
-    for (size_t i = 0; i<N; i++) {
-        std::string labelL = left.getNodeLabel(U.at(i));
-        for (size_t j = 0; j<M; j++) {
-            std::string labelR = right.getNodeLabel(V.at(i));
-            W[(i*M)+j] = (labelL == labelR);
-            assert(n == (i*M)+j);
-            n++;
-        }
-    }
+#if 0
+    size_t N = g.maximumNodeId();
+    size_t M = g.maximumEdgeId();
+    tripletList.reserve(M);
+    SpMat A(N, N);
 
-    for (size_t i = 0; i<N; i++) {
-        auto edgesL = left.outgoingEdges(U.at(i));
-        for (size_t j = 0; j<M; j++) {
-            auto edgesR = right.outgoingEdges(V.at(i));
-            size_t srcId = i * M + j;
-            double srcW = W[srcId] ? 1.0 : 0.6;
-
-            for (const auto& edgeL : edgesL) {
-                for (const auto& edgeR: edgesR) {
-                    size_t dstId = mapL[edgeL.second] * M + mapR[edgeR.second];
-                    double dstW = W[srcId] ? 1.0 : 0.6;
-
-                    tripletList.emplace_back(srcId, dstId, srcW*dstW);
-                }
-            }
+    for (size_t id : g.getNodeIds()) {
+        tripletList.emplace_back(id, id, 1.0);
+        for (const auto& edge : g.outgoingEdges(id)) {
+            tripletList.emplace_back(id, edge.second, 1.0);
         }
     }
 
     Eigen::MatrixXd tmp ;
     {
         A.setFromTriplets(tripletList.begin(), tripletList.end());
-        auto BTB = A.transpose() * A;
-        Eigen::MatrixXd D = (BTB * Eigen::VectorXd::Ones(BTB.cols())).asDiagonal();
-        Eigen::MatrixXd I = Eigen::MatrixXd::Identity(N*M,N*M);
-        Eigen::MatrixXd L = BTB - D;
-        for (size_t i = 0; i<N; i++) {
-            for (size_t j = 0; j<M; j++) {
-                L(i, j) = L(i,j) / std::sqrt(D(i,i)*D(j,j));
+        SpMat BTB = A.transpose() * A;
+        Eigen::VectorXd rowSums = BTB * Eigen::VectorXd::Ones(BTB.cols());
+        double inv_maxCoeff = 1.0/rowSums.maxCoeff();
+        SpMat I(N, N);
+        I.setIdentity();
+
+        for (int k = 0; k < BTB.outerSize(); ++k){
+            for (SpMat::InnerIterator it(BTB, k); it; ++it){
+                size_t i = it.row();
+                size_t j = it.col();
+                double further = 0.0;
+                if (i == j) further = rowSums(i);
+                it.valueRef() = ((i == j) ? 1.0 : 0.0) -
+                                    ((inv_maxCoeff * (it.value() - further)) / (rowSums(i)*rowSums(j)));
             }
         }
-        tmp = (I - D.maxCoeff() * L);
     }
-    return tmp.inverse().sum();
+    double det = tmp.determinant();
+    if (det == 0.0) {
+        return det;
+    } else {
+        // ERROR: the data apparently violates the assumption
+        Eigen::SimplicialLLT<SpMat> solver;
+        Eigen::VectorXd b(N);
+        b.setOnes();
+        solver.compute(A);
+        if (solver.info() != Eigen::Success) {
+            return 0.0;
+        }
+        Eigen::VectorXd x = solver.solve(b);
+        return x.sum();
+    }
+#endif
+    return g.size();
 }
 
 struct normalization_results {
@@ -148,7 +155,7 @@ struct normalization_results {
     normalization_results& operator=(normalization_results&&) = default;
 };
 
-normalization_results between_graph_classification_normalized_similarity(const FlexibleFA<std::string, size_t>& left, const FlexibleFA<std::string, size_t>& right) {
+normalization_results between_graph_classification_normalized_similarity(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right) {
     double L = between_graph_classification_simple_kernel(left, left);
     double R = between_graph_classification_simple_kernel(right, right);
     double LR = between_graph_classification_simple_kernel(left, right);
@@ -157,13 +164,14 @@ normalization_results between_graph_classification_normalized_similarity(const F
     return {LR, (LR/std::sqrt(L*R)), distance, distance/(distance+1.0)};
 }
 
+//#define NOSKIP
 
 
 void trient(const std::vector<std::pair<std::string, std::string>>& models) {
 
     std::vector<struct elements> mappings;
     bool doNotVisitLoopsTwice = false;
-    bool semantisch = true;
+    bool semantisch = false;
 
     // Loading the log
     std::string atoms{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
@@ -240,12 +248,14 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         std::cout << " ** Loading positive model: " << pos_neg.first << std::endl;
         Pip.run_pipeline( pos_neg.first, false);
         ref.pos_model = Pip.model;
-
+        FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
+        ref.pos_graph_size = pos_graph.shiftLabelsToNodes().size();
+#ifdef NOSKIP
         std::cout << " ** Loading total pos graph: " << pos_neg.first << std::endl;
         auto tmpRight = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
         ref.pos_graph_size = tmpRight.size();
         ref.pos_global_graph = tmpRight.shiftLabelsToNodes();
-#ifdef NOSKIP
+
         size_t X = Pip.GraphVector.size();
         {
             std::stringstream ss;
@@ -269,11 +279,13 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         std::cout << " ** Loading negative model: " << pos_neg.second << std::endl;
         Pip.run_pipeline( pos_neg.second, false);
         ref.neg_model = Pip.model;
-        std::cout << " ** Loading total neg graph: " << pos_neg.second << std::endl;
+        FlexibleFA<size_t, std::string> neg_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
+        ref.neg_graph_size = pos_graph.shiftLabelsToNodes().size();
+#ifdef NOSKIP
         auto tmpWrong = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.second+"out", false, true, map);
         ref.neg_graph_size = tmpWrong.size();
         ref.neg_global_graph = tmpWrong.shiftLabelsToNodes();
-#ifdef NOSKIP
+
         size_t Y = Pip.GraphVector.size();
         {
             std::stringstream ss;
@@ -307,7 +319,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
             auto& leftI = mappings[i];
             auto& leftJ = mappings[iter];
 
-#ifdef NOSKIP
+#if 1
             {
                 std::cout << " [Computing the intersection:] " << std::endl;
 
@@ -318,8 +330,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                     double inc = check_formula(ss.str());
                     std::cout << " - PositiveL&PositiveR syntax inconsistency = " << inc << std::endl;
                     if (inc == 0.0) {
-                        FlexibleFA<size_t, std::string> pos_graph =  Pip.decompose_ltlf_for_tiny_graphs(conj_pos, SigmaAll2, "cross1", false, true,
-                                                                                                        {});
+                        FlexibleFA<size_t, std::string> pos_graph =  Pip.lydia_script.generate_graph(SigmaAll,conj_pos);
                         std::cout << "° Positive datasets" << std::endl;
                         print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph.size());
                     }
@@ -328,12 +339,14 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                     ltlf conj_neg = ltlf::And(leftI.neg_model, leftJ.neg_model);
                     std::stringstream ss;
                     ss << conj_neg;
-                    double inc = check_formula(ss.str());
+                    std::string S = ss.str();
+                    std::cout << S << std::endl;
+                    double inc = check_formula(S);
                     std::cout << " - NegativeL&NegativeR syntax inconsistency = " << inc << std::endl;
                     if (inc == 0.0) {
-                        FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll2,conj_neg);
+                        FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,conj_neg);
                         std::cout << "° Negative datasets" << std::endl;
-                        print_syntax_metrics(std::cout, leftI.neg_graph_size, leftJ.neg_graph_size, pos_graph.size());
+                        print_syntax_metrics(std::cout, leftI.neg_graph_size, leftJ.neg_graph_size, pos_graph.shiftLabelsToNodes().size());
                     }
                 }
 
