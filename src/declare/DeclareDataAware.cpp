@@ -266,6 +266,7 @@ DeclareDataAware DeclareDataAware::parse_declare_non_data_string(const std::stri
     assert(pos != std::string::npos);
     pattern.left_act = pattern_name.substr(0, pos);
     STRIP_ALL_SPACES(pattern.left_act);
+    TO_LOWER(pattern.left_act);
 
     pattern_name = pattern_name.substr(pos+1);
     pos = pattern_name.find(']');
@@ -277,6 +278,8 @@ DeclareDataAware DeclareDataAware::parse_declare_non_data_string(const std::stri
     unsigned long converted = strtoul(second_or_number.c_str(), &p, 10);
     if (*p) {
         pattern.right_act = second_or_number;
+        STRIP_ALL_SPACES(pattern.right_act);
+        TO_LOWER(pattern.right_act);
         pattern.n = 1;
     } else {
         pattern.n = converted;

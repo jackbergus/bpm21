@@ -79,14 +79,14 @@ std::string input_pipeline::generate_fresh_atom() {
 }
 
 void input_pipeline::run_pipeline(const std::string &file, bool do_xes_renaming) {
-    std::cout << "Model = " << model << std::endl;
+    ///std::cout << "Model = " << model << std::endl;
     final_model = model;
     init_pipeline(file, do_xes_renaming);
 
     if ((!double_map.empty()) || (!(string_map.empty()))) {
         decompose_and_atomize();
         final_model = setInterpretCompoundSubatom(model);
-        std::cout << "Atomized = " << final_model << std::endl;
+        ///std::cout << "Atomized = " << final_model << std::endl;
     } else {
         final_model = model;
     }
@@ -343,7 +343,7 @@ void input_pipeline::init_pipeline(const std::string &file, bool do_xes_renaming
 
     std::cout << "Parsing the file, and putting it in NNF, and simplifying it!" << std::endl;
     model = mp.load_model_to_semantics(stream, do_xes_renaming, file.ends_with(".sdecl")).nnf();
-    std::cout << "Model = " <<  model << std::endl;
+    ///std::cout << "Model = " <<  model << std::endl;
 
     std::cout << "Collecting the atoms from the formula" << std::endl;
 
@@ -521,7 +521,7 @@ namespace fs = std::filesystem;
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
     FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
     FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
-    /*{
+    {
         std::ofstream f{"L.dot"};
         lhs.dot(f, false);
         f.flush(); f.close();
@@ -530,18 +530,19 @@ FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_
         std::ofstream f{"R.dot"};
         rhs.dot(f, false);
         f.flush(); f.close();
-    }*/
+    }
     FlexibleFA<size_t, std::string> result;
     auto itnM = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R);
-    /*{
-        std::ofstream f{"itnM.dot"};
-        itnM.dot(f, false);
-        f.flush(); f.close();
-    }*/
+
     FlexibleFA<size_t, std::string> productGraph = itnM.shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
     //result = fast_minimization(productGraph);
     minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
     ///result = fast_minimization(productGraph);
+    {
+        std::ofstream f{"itnM.dot"};
+        result.dot(f, false);
+        f.flush(); f.close();
+    }
     return result;
 }
 
@@ -558,18 +559,24 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
     size_t N_graphs = 0;
     std::unordered_map<std::string, std::string> old_name_to_new, new_name_to_old;
 
+    bool toRestoreBack = safely_map_names;
     if (!old_to_new.empty()) {
         for (const std::string& act : atom_universe)
             assert(old_to_new.contains(act));
-        for (const auto& cp : old_to_new)
-            new_name_to_old[cp.second] = cp.first;
-    } else if (safely_map_names) {
-        size_t i = 0;
-        for (const std::string& act : atom_universe) {
-            std::string local = "a"+std::to_string(i);
-            old_name_to_new[act] = local;
-            new_name_to_old[local] = act;
-            i++;
+        /*for (const auto& cp : old_to_new)
+            new_name_to_old[cp.second] = cp.first;*/
+        old_name_to_new = old_to_new;
+        safely_map_names = true;
+        toRestoreBack = false;
+    } else {
+        if (safely_map_names) {
+            size_t i = 0;
+            for (const std::string& act : atom_universe) {
+                std::string local = "a"+std::to_string(i);
+                old_name_to_new[act] = local;
+                new_name_to_old[local] = act;
+                i++;
+            }
         }
     }
 
@@ -634,7 +641,7 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
         // label expected from the label set, have thus edges to a new sink node
         for (size_t i = 1; i<=N_graphs; i++) {
             ParseFFLOATDot graph_loader;
-            graph_loader.need_back_conversion = safely_map_names;
+            graph_loader.need_back_conversion = toRestoreBack;
             graph_loader.back_conv = &new_name_to_old;
             std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
             auto l = GraphVector.emplace_back(
@@ -651,6 +658,7 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
 
 
     if (useLydia) {
+        std::cout << "Lydia" << std::endl;
         return lydia_script.generate_graph(SigmaAll, formula.replace_with_unique_name(old_name_to_new));
     } else {
         if (GraphVector.empty()) {

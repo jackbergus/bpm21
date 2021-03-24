@@ -25,6 +25,7 @@
 
 #include "graphs/third-party-wrappers/lydia_entry_point.h"
 #include <lydia/parser/ltlf/driver.cpp>
+#include <graphs/algorithms/minimizeDFA.h>
 
 lydia_entry_point::lydia_entry_point() : dfa_strategy{}, translator{dfa_strategy}, driver{new whitemech::lydia::parsers::ltlf::LTLfDriver()} {
 
@@ -101,4 +102,90 @@ whitemech::lydia::ldlf_ptr lydia_entry_point::convert_formula_from_objects(const
             return driver->add_LTLfFalse();
 
     }
+}
+
+std::vector<std::pair<std::pair<int, int>, std::vector<std::vector<whitemech::lydia::atom>>>>
+lydia_entry_point::generate_map(whitemech::lydia::ldlf_ptr parsed_formula, const std::string &file_pdf,
+                                std::vector<size_t> &begins, std::vector<size_t> &ends) {
+    auto my_dfa = translator.to_dfa(*parsed_formula);
+    auto my_mona_dfa =
+            std::dynamic_pointer_cast<whitemech::lydia::mona_dfa>(my_dfa);
+    auto num = my_mona_dfa->get_nb_variables();
+    std::vector<unsigned> x(num);
+    return whitemech::lydia::print_mona_dfa(my_mona_dfa->get_dfa(), file_pdf,
+                                            ends,
+                                            begins,
+                                            my_mona_dfa->get_nb_variables(),
+                                            my_mona_dfa->names);
+}
+
+FlexibleFA<size_t, std::string> lydia_entry_point::print_map(const std::unordered_set<std::string> &SigmaAll,
+                                                             std::vector<size_t> &begins, std::vector<size_t> &ends,
+                                                             const std::vector<std::pair<std::pair<int, int>, std::vector<std::vector<whitemech::lydia::atom>>>> &map) {
+    //static const std::string wedge{" ∧ "};
+    FlexibleFA<size_t, std::string> result;
+    std::unordered_set<size_t> F{ends.begin(), ends.end()}, I{begins.begin(), begins.end()};
+    int min_id = std::numeric_limits<int>::max();
+    int max_id = -std::numeric_limits<int>::max();
+    int n_vertices = 0;
+    for (const auto& cp : map) {
+        const std::pair<int, int>& edge = cp.first;
+        min_id = std::min(min_id, edge.first);
+        max_id = std::max(max_id, edge.first);
+        min_id = std::min(min_id, edge.second);
+        max_id = std::max(max_id, edge.second);
+    }
+    n_vertices = max_id - min_id + 1;
+    for (int i = 0; i<n_vertices; i++) {
+        size_t id = result.addNewNodeWithLabel(min_id+i);
+        if (I.contains(min_id+i))
+            result.addToInitialNodesFromId(id);
+        if (F.contains(min_id+i))
+            result.addToFinalNodesFromId(id);
+        assert (id == i);
+    }
+    for (const auto& cp : map) {
+        const std::pair<int, int>& edge = cp.first;
+        const std::vector<std::vector<whitemech::lydia::atom>>& clause = cp.second;
+
+        //std::cout << edge.first << "-->" << edge.second << std::endl;
+        ltlf dist_formula = ltlf::True();
+        for (size_t j = 0, M = clause.size(); j<M; j++) {
+            const std::vector<whitemech::lydia::atom>& disj = clause.at(j);
+            ltlf formula = ltlf::True();
+            //std::cout << "\t\t";
+            for (size_t i = 0, N = disj.size(); i<N; i++) {
+                ltlf atom = ltlf::Act(disj.at(i).name);
+                if (disj.at(i).is_negated)
+                    atom = atom.negate();
+                if (i == 0) {
+                    formula = atom;
+                } else {
+                    formula = ltlf::And(atom, formula);
+                }
+                /*std::cout << (disj.at(i).is_negated ? "~" : "") << disj.at(i).name;
+                if (i != (N-1)) {
+                    std::cout << wedge;
+                } else {
+                    std::cout << std::endl;
+                }*/
+            }
+            if (j == 0) {
+                dist_formula = formula;
+            } else {
+                dist_formula = ltlf::Or(dist_formula, formula);
+            }
+        }
+
+        for (const std::string& act : SigmaAll) {
+            if (dist_formula.easy_interpret(act)) {
+                //   std::cerr << '\t' << act << std::endl;
+                result.addNewEdgeFromId(edge.first - min_id, edge.second - min_id, act);
+            }
+        }
+    }
+
+    FlexibleFA<size_t, std::string> result2;
+    minimizeDFA<size_t, std::string>(result).ignoreNodeLabels2(result2);
+    return result2;
 }

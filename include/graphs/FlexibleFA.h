@@ -283,18 +283,17 @@ public:
             os << '\t' << node_id;
             bool hasFinal = final_nodes.contains(node_id);
             bool hasInitial = initial_nodes.contains(node_id);
+            os << " [";
             if (hasFinal || hasInitial) {
-                os << " [";
                 if (hasInitial)
-                    os << "root=true";
+                    os << "root=true ";
                 if (hasFinal) {
-                    if (hasInitial) os << ' ';
-                    os << "shape=doublecircle";
+                    os << "shape=doublecircle ";
                 }
-                os << "]" << std::endl;
-            } else {
-                os << std::endl;
+
             }
+            os << "label=\"" << getNodeLabel(node_id) <<"\"";
+            os << "]" << std::endl;
             /*std::string shape = "circle";
             if (final_nodes.contains(node_id)) {
                 shape = "doublecircle";
@@ -563,7 +562,7 @@ public:
     }
 
     FlexibleFA<NodeElement, EdgeLabel>& makeDFAAsInTheory(const std::unordered_set<EdgeLabel>& additional = {}) {
-        std::cout << "makeDFAAsInTheory" << std::endl;
+        ///std::cout << "makeDFAAsInTheory" << std::endl;
         std::unordered_set<EdgeLabel> acts = getAllActionSet();
         acts.insert(additional.begin(), additional.end());
         bool insertBottom = false;

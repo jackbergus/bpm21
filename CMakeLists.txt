@@ -117,4 +117,9 @@ add_library(path_generator OBJECT
         )
 include_directories(submodules/probtrace/include/)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf path_generator)
+
+add_subdirectory(submodules/lemon)
+include_directories(submodules/lemon)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/submodules/lemon)
+
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf path_generator lemon)

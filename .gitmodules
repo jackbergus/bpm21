@@ -22,3 +22,6 @@
 [submodule "submodules/eigen"]
 	path = submodules/eigen
 	url = https://gitlab.com/libeigen/eigen
+[submodule "submodules/lemon"]
+	path = submodules/lemon
+	url = https://github.com/gpaf/lemon-mirror

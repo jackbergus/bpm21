@@ -87,9 +87,6 @@ struct input_pipeline {
                                               use_lydia,
                                               old_to_new);
     }
-
-
-private:
     FlexibleFA<size_t, std::string>
     decompose_ltlf_for_tiny_graphs(const ltlf &formula,
                                    std::unordered_set<std::string> &SigmaAll,
@@ -97,6 +94,9 @@ private:
                                    bool safely_map_names,
                                    bool useLydia,
                                    const std::unordered_map<std::string, std::string>& old_to_new = {});
+
+private:
+
 
     size_t count_fresh_atoms;
 
