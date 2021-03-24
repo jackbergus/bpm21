@@ -456,9 +456,12 @@ double check_formula(const std::string& ltlf_string, bool simplify = false) {
     return checker.get_inconsistency_measure(res);
 }
 
+#define     LIMIT_SIMPLIFIC_THR  (5)
+
+/*
 #include    <ReadGraph.h>
 #define     LIMIT_VISIT_COST     (0.001)
-#define     LIMIT_SIMPLIFIC_THR  (3)
+
 #define     APPROX_PATH_COST     (0.999999)
 
 
@@ -506,9 +509,7 @@ void load_to_ReadGraph(const std::string& epsilon, const FlexibleFA<std::string,
     }
     std::cout << " MAX = " << (max_node_id) << std::endl;
     out.finalizeEdgesMatrix(1.0);
-}
-
-#include "submodules/probtrace/include/export/SemanticInconsistencyAdapter.h"
+}*/
 
 
 #include <lemon/smart_graph.h>
@@ -631,19 +632,27 @@ double align(const FlexibleFA<std::string, size_t>& x, const std::string& path, 
     return (double)d[lemon::SmartDigraph::nodeFromId(fini)];
 }
 
-struct result_semantish_align {
-    double ISigma;
-    double IMax;
-    double IHit;
+/**
+ * The three possible semantic inconsistency metrics for the graph, that are using the actual log
+ * to measure the goodness of the representation
+ */
+struct result_semantisch_align {
+    double ISigma;  // Summation of all the misalignments between the clauses
+    double IMax;    // Maximum inconsistency misalignment among the clauses
+    double IHit;    // Number of inconsistent clauses
 
-    result_semantish_align(double iSigma, double iMax, double iHit) : ISigma(iSigma), IMax(iMax), IHit(iHit) {}
-    result_semantish_align() : result_semantish_align(0,0,0) {}
-    result_semantish_align(const result_semantish_align&) = default;
-    result_semantish_align(result_semantish_align&&) = default;
-    result_semantish_align& operator=(const result_semantish_align&) = default;
-    result_semantish_align& operator=(result_semantish_align&&) = default;
+    result_semantisch_align(double iSigma, double iMax, double iHit) : ISigma(iSigma), IMax(iMax), IHit(iHit) {}
+    result_semantisch_align() : result_semantisch_align(0, 0, 0) {}
+    result_semantisch_align(const result_semantisch_align&) = default;
+    result_semantisch_align(result_semantisch_align&&) = default;
+    result_semantisch_align& operator=(const result_semantisch_align&) = default;
+    result_semantisch_align& operator=(result_semantisch_align&&) = default;
 };
 
+/**
+ * Compute the inconsistency measures by performing the best alignment towards a graph, rather than
+ * trying to unfold it.
+ */
 struct for_semantisch_inconsistency {
     std::string epsilon;
     std::vector<FlexibleFA<std::string, size_t>> V;
@@ -654,7 +663,7 @@ struct for_semantisch_inconsistency {
         V.emplace_back(g.shiftLabelsToNodes());
     }
 
-    result_semantish_align compute_in_triplicate(const std::vector<std::string>& log) {
+    result_semantisch_align compute_in_triplicate(const std::vector<std::string>& log) {
         if (log.empty()) return {0.0, 0.0, 0.0};
         double result_sigma = std::numeric_limits<double>::max();
         double result_max = std::numeric_limits<double>::max();
@@ -680,39 +689,12 @@ struct for_semantisch_inconsistency {
 struct elements {
     std::pair<std::string, std::string> files;
 
-    ltlf                            pos_model;
-    ltlf                            neg_model;
-    FlexibleFA<size_t, std::string> pos_global_graph;
-    double                          pos_graph_size;
-    FlexibleFA<size_t, std::string> neg_global_graph;
-    double                          neg_graph_size;
-    for_semantisch_inconsistency    pos_trace_unfolder;
-    for_semantisch_inconsistency    neg_trace_unfolder;
+    ltlf                            pos_model,          neg_model;
+    FlexibleFA<std::string, size_t> pos_global_graph,   neg_global_graph;
+    double                          pos_graph_size,     neg_graph_size;
+    for_semantisch_inconsistency    pos_trace_unfolder, neg_trace_unfolder;
 
     elements(const std::string& epsilon) : pos_trace_unfolder{epsilon}, neg_trace_unfolder{epsilon} {}
-    /*std::unordered_set<std::string> collect_label_intersection(bool isPos) {
-        std::unordered_set<std::string> S;
-        bool first = true;
-        for (const std::vector<struct path_info>& x : (isPos ? pos_trace_unfolder : neg_trace_unfolder)
-                                                       .logs_from_different_clauses) {
-            std::unordered_set<std::string> CL;
-            for (const struct path_info& trace : x) {
-                CL.insert(trace.path);
-            }
-            if (first) {
-                S = CL;
-                first = false;
-            } else {
-                if (!S.empty())
-                    S = unordered_intersection(S, CL);
-            }
-        }
-        return S;
-    }*/
-
-    /*elements(const std::string& varepsilon, bool doNotVisitLoopsTwice, size_t maxPathLength, double min_cost) :
-    pos_trace_unfolder{varepsilon, doNotVisitLoopsTwice, maxPathLength, min_cost},
-    neg_trace_unfolder{varepsilon, doNotVisitLoopsTwice, maxPathLength, min_cost} {};*/
 };
 
 void print_syntax_metrics(std::ostream& out, double d1, double d2, double d3) {
@@ -736,54 +718,98 @@ void print_syntax_metrics(std::ostream& out, double d1, double d2, double d3) {
     out  << std::endl << std::endl;
 }
 
-#include "submodules/probtrace/include/distances/strings/Levenstein.h"
+#include <Eigen/Sparse>
 
-double alignment_distance(std::unordered_set<std::string>& left, std::unordered_set<std::string>& right) {
-    double cost = 0.0;
-    for (const std::string& L : left) {
-        for (const std::string& R : right) {
-            cost += GeneralizedLevensteinDistance(L, R);
+double between_graph_classification_simple_kernel(const FlexibleFA<std::string, size_t>& left, const FlexibleFA<std::string, size_t>& right) {
+    auto U = left.getNodeIds();
+    size_t N = U.size();
+    auto V = right.getNodeIds();
+    size_t M = V.size();
+    std::unordered_map<size_t, size_t> mapL, mapR;
+    for (size_t i = 0; i<std::min(N,M); i++) {
+        mapL[U.at(i)] = i;
+        mapR[V.at(i)] = i;
+    }
+    if (N<M) {
+        for (size_t i = N; i<M; i++) {
+            mapR[V.at(i)] = i;
+        }
+    } else if (N>M) {
+        for (size_t i = M; i<N; i++) {
+            mapR[U.at(i)] = i;
         }
     }
-    return cost;
-}
+    std::vector<bool> W(N*M, 0.0);
+    typedef Eigen::SparseMatrix<double> SpMat;
+    typedef Eigen::Triplet<double> T;
+    std::vector<T> tripletList;
+    tripletList.reserve(left.maximumEdgeId()*right.maximumEdgeId());
+    SpMat A(N*M,N*M);
 
-void print_semantic_metrics(std::ostream& out, std::unordered_set<std::string>& left, std::unordered_set<std::string>& right) {
-    out << " Semantic distances " << std::endl;
-    out << " a) Finite Set Intersection " << std::endl;
-    double L = left.size();
-    double R = right.size();
-    double LA = alignment_distance(left, left);
-    double RA = alignment_distance(right, right);
-    {
-        double num = unordered_intersection(left, right).size();
-        out << "    * Non-Normalized distance: " << num << std::endl;
-        out << "    * Normalized distance: " << num/std::sqrt(L*R) << std::endl;
+    size_t n = 0;
+    for (size_t i = 0; i<N; i++) {
+        std::string labelL = left.getNodeLabel(U.at(i));
+        for (size_t j = 0; j<M; j++) {
+            std::string labelR = right.getNodeLabel(V.at(i));
+            W[(i*M)+j] = (labelL == labelR);
+            assert(n == (i*M)+j);
+            n++;
+        }
     }
-    out << " b) Alignment-based Intersection " << std::endl;
-    {
-        double num = alignment_distance(left, right);
-        out << "    * Non-Normalized distance: " << num << std::endl;
-        out << "    * Normalized distance: " << num/std::sqrt(LA*RA) << std::endl;
+
+    for (size_t i = 0; i<N; i++) {
+        auto edgesL = left.outgoingEdges(U.at(i));
+        for (size_t j = 0; j<M; j++) {
+            auto edgesR = right.outgoingEdges(V.at(i));
+            size_t srcId = i * M + j;
+            double srcW = W[srcId] ? 1.0 : 0.6;
+
+            for (const auto& edgeL : edgesL) {
+                for (const auto& edgeR: edgesR) {
+                    size_t dstId = mapL[edgeL.second] * M + mapR[edgeR.second];
+                    double dstW = W[srcId] ? 1.0 : 0.6;
+
+                    tripletList.emplace_back(srcId, dstId, srcW*dstW);
+                }
+            }
+        }
     }
-    out  << std::endl << std::endl;
+    A.setFromTriplets(tripletList.begin(), tripletList.end());
+
+    auto BTB = A.transpose() * A;
+    Eigen::MatrixXd D = (BTB * Eigen::VectorXd::Ones(BTB.cols())).asDiagonal();
+    Eigen::MatrixXd I = Eigen::MatrixXd::Identity(N*M,N*M);
+    Eigen::MatrixXd L = BTB - D;
+    for (size_t i = 0; i<N; i++) {
+        for (size_t j = 0; j<M; j++) {
+            L(i, j) = L(i,j) / std::sqrt(D(i,i)*D(j,j));
+        }
+    }
+    return (I - D.maxCoeff() * L).inverse().sum();
 }
 
-// A utility function to find the vertex with minimum distance value, from
-// the set of vertices not yet included in shortest path tree
-size_t minDistance(std::vector<double>& dist, std::vector<bool>& sptSet)
-{
-    // Initialize min value
-    double min = std::numeric_limits<double>::max();
-    size_t min_index = -1;
-    size_t V = dist.size();
+struct normalization_results {
+    double similarity,normalized_similarity,distance,normalized_distance;
 
-    for (int v = 0; v < V; v++)
-        if (sptSet[v] == false && dist[v] <= min)
-            min = dist[v], min_index = v;
+    normalization_results(double similarity, double normalizedSimilarity, double distance, double normalizedDistance)
+            : similarity(similarity), normalized_similarity(normalizedSimilarity), distance(distance),
+              normalized_distance(normalizedDistance) {}
+    normalization_results() : normalization_results(0,0,0,0) {}
+    normalization_results(const normalization_results&) = default;
+    normalization_results(normalization_results&&) = default;
+    normalization_results& operator=(const normalization_results&) = default;
+    normalization_results& operator=(normalization_results&&) = default;
+};
 
-    return min_index;
+normalization_results between_graph_classification_normalized_similarity(const FlexibleFA<std::string, size_t>& left, const FlexibleFA<std::string, size_t>& right) {
+    double L = between_graph_classification_simple_kernel(left, left);
+    double R = between_graph_classification_simple_kernel(right, right);
+    double LR = between_graph_classification_simple_kernel(left, right);
+
+    double distance = std::sqrt(L+R-2*LR);
+    return {LR, (LR/std::sqrt(L*R)), distance, distance/(distance+1.0)};
 }
+
 
 
 void trient(const std::vector<std::pair<std::string, std::string>>& models) {
@@ -793,7 +819,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
     bool semantisch = true;
 
     // Loading the log
-    std::string atoms{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+    std::string atoms{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
     input_pipeline Pip{"p"};
     std::unordered_set<std::string> SigmaAll, SigmaAll2;
     std::unordered_map<std::string, std::string> map;
@@ -812,8 +838,8 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         max_trace_length = std::max(max_trace_length, trace.size());
     std::cout << "max-trace-length: " << max_trace_length << std::endl;
 
-    double k = LIMIT_SIMPLIFIC_THR;
-    double min_cost = std::pow(APPROX_PATH_COST, max_trace_length-2)*std::pow(LIMIT_VISIT_COST, k);
+    /*double k = LIMIT_SIMPLIFIC_THR;
+    double min_cost = std::pow(APPROX_PATH_COST, max_trace_length-2)*std::pow(LIMIT_VISIT_COST, k);*/
     size_t atom_i = 0;
 
     // Mapping elements
@@ -867,8 +893,9 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         ref.pos_model = Pip.model;
 
         std::cout << " ** Loading total pos graph: " << pos_neg.first << std::endl;
-        ref.pos_global_graph = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
-        ref.pos_graph_size = ref.pos_global_graph.size();
+        auto tmpRight = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
+        ref.pos_graph_size = tmpRight.size();
+        ref.pos_global_graph = tmpRight.shiftLabelsToNodes();
         size_t X = Pip.GraphVector.size();
         {
             std::stringstream ss;
@@ -892,8 +919,9 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         Pip.run_pipeline( pos_neg.second, false);
         ref.neg_model = Pip.model;
         std::cout << " ** Loading total neg graph: " << pos_neg.first << std::endl;
-        ref.neg_global_graph = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
-        ref.neg_graph_size = ref.neg_global_graph.size();
+        auto tmpWrong = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
+        ref.neg_graph_size = tmpWrong.size();
+        ref.neg_global_graph = tmpWrong.shiftLabelsToNodes();
         size_t Y = Pip.GraphVector.size();
         {
             std::stringstream ss;
@@ -958,20 +986,22 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
 
             }
 
-            if (false) {
+            if (semantisch) {
                 {
                     std::cout << "° Positive datasets" << std::endl;
-                    auto Ipos = leftI.collect_label_intersection(true);
-                    auto Jpos = leftJ.collect_label_intersection(true);
-                    print_semantic_metrics(std::cout, Ipos, Jpos);
+                    auto res = between_graph_classification_normalized_similarity(leftI.pos_global_graph, leftJ.pos_global_graph);
+                    std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
+                    std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
+                    std::cout << " - Random Walks Distance: " << res.distance << std::endl;
+                    std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
                 }
-
                 {
-
                     std::cout << "° Negative datasets" << std::endl;
-                    auto Ineg = leftI.collect_label_intersection(false);
-                    auto Jneg = leftJ.collect_label_intersection(false);
-                    print_semantic_metrics(std::cout, Ineg, Jneg);
+                    auto res = between_graph_classification_normalized_similarity(leftI.neg_global_graph, leftJ.neg_global_graph);
+                    std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
+                    std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
+                    std::cout << " - Random Walks Distance: " << res.distance << std::endl;
+                    std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
                 }
             }
             std::cout << std::endl << std::endl << std::endl;
@@ -983,28 +1013,13 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
 
 int main() {
 
-#if 0
+
     std::vector<std::pair<std::string, std::string>> dataset;
     dataset.emplace_back("data/trient/miner/pos.sdecl", "data/trient/miner/neg.sdecl");
-    dataset.emplace_back("data/trient/learner/pos.sdecl", "data/trient/learner/neg.sdecl");
+    dataset.emplace_back("data/trient/explainer/pos.sdecl", "data/trient/explainer/neg.sdecl");
     trient(dataset);
     aalta::aalta_formula::destroy();
-#endif
 
-    FlexibleFA<std::string, size_t> graph;
-    size_t src = graph.addNewNodeWithLabel("a");
-    size_t dst1 = graph.addNewNodeWithLabel("c");
-    size_t dst2 = graph.addNewNodeWithLabel("d");
-    graph.addNewEdgeFromId(src, dst1, 0);
-    graph.addNewEdgeFromId(src, dst2, 0);
-    graph.addToFinalNodesFromId(dst1);
-    graph.addToFinalNodesFromId(dst2);
-    graph.addToInitialNodesFromId(src);
-    std::cout << align(graph, "defg", ".") << std::endl;
-    std::cout << align(graph, "ac", ".") << std::endl;
-    std::cout << align(graph, "acc", ".") << std::endl;
-    std::cout << align(graph, "acd", ".") << std::endl;
-    std::cout << align(graph, "da", ".") << std::endl;
 
     //specific_testing();
     //testing3();

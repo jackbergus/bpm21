@@ -99,22 +99,7 @@ include_directories(submodules/aaltaf/submodules/ltlparser)
 
 include_directories(submodules/eigen)
 
-add_library(path_generator OBJECT
-        submodules/probtrace/src/matrix_graph_path/PathIterator.cpp
-        submodules/probtrace/include/matrix_graph_path/PathIterator.h
-        submodules/probtrace/src/matrix_graph_path/ConditionalReadGraphIterable.cpp
-        submodules/probtrace/include/matrix_graph_path/ConditionalReadGraphIterable.h
-        submodules/probtrace/src/ReadGraph.cpp
-        submodules/probtrace/include/ReadGraph.h
-        submodules/probtrace/src/matrix_graph_path/path_info.cpp
-        submodules/probtrace/src/matrix_graph_path/stack_info.cpp
-        submodules/probtrace/src/utils/hash_combine.cpp
-        submodules/probtrace/src/embeddings/path_embedding/MultiplePathsEmbeddingStrategy.cpp
-        submodules/probtrace/src/export/MultiplePathsEmbeddingConcrete.cpp
-        submodules/probtrace/include/export/MultiplePathsEmbeddingConcrete.h
-        submodules/probtrace/src/export/SemanticInconsistencyAdapter.cpp
-        submodules/probtrace/include/export/SemanticInconsistencyAdapter.h
-        )
+
 include_directories(submodules/probtrace/include/)
 
 
@@ -122,4 +107,4 @@ add_subdirectory(submodules/lemon)
 include_directories(submodules/lemon)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/submodules/lemon)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf path_generator lemon)
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf  lemon)
