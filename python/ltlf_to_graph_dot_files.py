@@ -32,7 +32,7 @@ if __name__ == "__main__":
         for line in [line.rstrip() for line in f]:
             parser = LTLfParser()
             auto = parser(line)
-            #print(line)
+            print(line)
             assert (isinstance(auto, LTLfFormula))
             g3 = auto.to_automaton().to_graphviz()
             g3.save(filename=file+"_graph_"+str(i)+".dot", directory=path)

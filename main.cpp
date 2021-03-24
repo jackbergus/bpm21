@@ -90,7 +90,6 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
     // Only among the nodes performing the match
     FlexibleFA<std::string, size_t> g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(left, right);
 
-#if 0
     size_t N = g.maximumNodeId();
     size_t M = g.maximumEdgeId();
     tripletList.reserve(M);
@@ -106,13 +105,24 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
     Eigen::MatrixXd tmp ;
     {
         A.setFromTriplets(tripletList.begin(), tripletList.end());
-        SpMat BTB = A.transpose() * A;
-        Eigen::VectorXd rowSums = BTB * Eigen::VectorXd::Ones(BTB.cols());
-        double inv_maxCoeff = 1.0/rowSums.maxCoeff();
+        //SpMat BTB = A.transpose() * A;
+
+        // Diagonal matrix D
+        Eigen::VectorXd rowSums = (A * Eigen::VectorXd::Ones(A.cols())); // A -> BTB
+        for (size_t i = 0, O = rowSums.size(); i<O; i++) {
+            rowSums(i) = std::sqrt(rowSums(i));
+        }
+        Eigen::DiagonalMatrix<double, Eigen::Dynamic> diagonal_matrix(N);
+        diagonal_matrix.diagonal() = rowSums;
+
+        SpMat L = diagonal_matrix * A * diagonal_matrix;
+        double gamma = (L * Eigen::VectorXd::Ones(L.cols())).maxCoeff();
+
         SpMat I(N, N);
         I.setIdentity();
+        tmp = I - (gamma * L);
 
-        for (int k = 0; k < BTB.outerSize(); ++k){
+        /*for (int k = 0; k < BTB.outerSize(); ++k){
             for (SpMat::InnerIterator it(BTB, k); it; ++it){
                 size_t i = it.row();
                 size_t j = it.col();
@@ -121,25 +131,25 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
                 it.valueRef() = ((i == j) ? 1.0 : 0.0) -
                                     ((inv_maxCoeff * (it.value() - further)) / (rowSums(i)*rowSums(j)));
             }
-        }
+        }*/
     }
-    double det = tmp.determinant();
+    /*double det = tmp.determinant();
     if (det == 0.0) {
         return det;
-    } else {
+    } else*/ {
         // ERROR: the data apparently violates the assumption
-        Eigen::SimplicialLLT<SpMat> solver;
         Eigen::VectorXd b(N);
         b.setOnes();
-        solver.compute(A);
+        return tmp.partialPivLu().solve(b).sum();
+        /*Eigen::SimplicialLLT<SpMat> solver;
+
+        solver.compute(tmp);
         if (solver.info() != Eigen::Success) {
             return 0.0;
         }
         Eigen::VectorXd x = solver.solve(b);
-        return x.sum();
+        return x.sum();*/
     }
-#endif
-    return g.size();
 }
 
 struct normalization_results {
@@ -155,6 +165,13 @@ struct normalization_results {
     normalization_results& operator=(normalization_results&&) = default;
 };
 
+input_pipeline &
+getSemanticsDecomposition(bool semantisch, input_pipeline &Pip, std::unordered_set<std::string> &SigmaAll2,
+                          const std::unordered_map<std::string, std::string> &map,
+                          const std::vector<std::string> &pos_atom_log,
+                          for_semantisch_inconsistency &ref,
+                          const std::string &Uppercase, const ltlf &test, const std::string &str);
+
 normalization_results between_graph_classification_normalized_similarity(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right) {
     double L = between_graph_classification_simple_kernel(left, left);
     double R = between_graph_classification_simple_kernel(right, right);
@@ -168,10 +185,10 @@ normalization_results between_graph_classification_normalized_similarity(Flexibl
 
 
 void trient(const std::vector<std::pair<std::string, std::string>>& models) {
-
+    Eigen::initParallel();
     std::vector<struct elements> mappings;
     bool doNotVisitLoopsTwice = false;
-    bool semantisch = false;
+    bool semantisch = true;
 
     // Loading the log
     std::string atoms{"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
@@ -249,54 +266,40 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         Pip.run_pipeline( pos_neg.first, false);
         ref.pos_model = Pip.model;
         FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
-        ref.pos_graph_size = pos_graph.shiftLabelsToNodes().size();
-#ifdef NOSKIP
-        std::cout << " ** Loading total pos graph: " << pos_neg.first << std::endl;
-        auto tmpRight = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.first+"out", false, true, map);
-        ref.pos_graph_size = tmpRight.size();
-        ref.pos_global_graph = tmpRight.shiftLabelsToNodes();
-
-        size_t X = Pip.GraphVector.size();
+        ref.pos_global_graph = pos_graph.shiftLabelsToNodes();
+        ref.pos_graph_size = ref.pos_global_graph.size();
+        auto final_pos = Pip.final_model;
         {
             std::stringstream ss;
             ss << ref.pos_model;
-            std::cout << " - Positive model syntax inconsistency = " << check_formula(ss.str(), X > LIMIT_SIMPLIFIC_THR) << std::endl;
+            std::cout << " - Positive model syntax inconsistency = " << check_formula(ss.str()) << std::endl;
         }
-        std::cout << " ** Loading chunks pos graph: " << pos_neg.first << std::endl;
-        if (semantisch)  {
-            for (const auto& g : Pip.GraphVector) {
-                ref.pos_trace_unfolder.collect_traces_from_model_clause_as_graph(g);
-            }
-            auto result = ref.pos_trace_unfolder.compute_in_triplicate(pos_atom_log);
-            std::cout << " - Positive model semantic (I_Sigma) inconsistency = " << result.ISigma << std::endl;
-            std::cout << " - Positive model semantic (I_Max) inconsistency = " << result.IMax << std::endl;
-            std::cout << " - Positive model semantic (I_Hit) inconsistency = " << result.IHit << std::endl;
-        }
-#endif
-
 
         ////// Negative Model
         std::cout << " ** Loading negative model: " << pos_neg.second << std::endl;
         Pip.run_pipeline( pos_neg.second, false);
         ref.neg_model = Pip.model;
         FlexibleFA<size_t, std::string> neg_graph = Pip.lydia_script.generate_graph(SigmaAll,Pip.model);
-        ref.neg_graph_size = pos_graph.shiftLabelsToNodes().size();
+        ref.neg_global_graph = neg_graph.shiftLabelsToNodes();
+        ref.neg_graph_size = ref.neg_global_graph.size();
+        auto final_neg = Pip.final_model;
+        {
+            std::stringstream ss;
+            ss << ref.neg_model;
+            std::cout << " - Negative model syntax inconsistency = " << check_formula(ss.str()) << std::endl;
+        }
+        {
+            std::stringstream ss;
+            ss << ltlf::And(ref.neg_model, ref.pos_model);
+            std::cout << " - Positive & Negative syntax inconsistency = " << check_formula(ss.str()) << std::endl;
+        }
 #ifdef NOSKIP
         auto tmpWrong = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.second+"out", false, true, map);
         ref.neg_graph_size = tmpWrong.size();
         ref.neg_global_graph = tmpWrong.shiftLabelsToNodes();
 
         size_t Y = Pip.GraphVector.size();
-        {
-            std::stringstream ss;
-            ss << ref.neg_model;
-            std::cout << " - Negative model syntax inconsistency = " << check_formula(ss.str(), Y > LIMIT_SIMPLIFIC_THR) << std::endl;
-        }
-        {
-            std::stringstream ss;
-            ss << ltlf::And(ref.neg_model, ref.pos_model);
-            std::cout << " - Positive&Negative syntax inconsistency = " << check_formula(ss.str(), (X+Y)>(LIMIT_SIMPLIFIC_THR*2)) << std::endl;
-        }
+
         if (semantisch) {
             std::cout << " ** Loading chunks neg graph: " << pos_neg.second << std::endl;
             for (const auto& g : Pip.GraphVector) {
@@ -308,6 +311,16 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
             std::cout << " - Negative model semantic (I_Hit) inconsistency = " << result.IHit << std::endl;
         }
 #endif
+
+        std::string Uppercase = "Positive";
+        auto test = final_pos;
+        auto str = pos_neg.first;
+
+        getSemanticsDecomposition(semantisch, Pip, SigmaAll2, map, pos_atom_log,
+                                  ref.pos_trace_unfolder, "Positive", final_pos, pos_neg.first);
+
+        getSemanticsDecomposition(semantisch, Pip, SigmaAll2, map, neg_atom_log,
+                                  ref.neg_trace_unfolder, "Negative", final_neg, pos_neg.second);
 
         N++;
     }
@@ -332,7 +345,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                     if (inc == 0.0) {
                         FlexibleFA<size_t, std::string> pos_graph =  Pip.lydia_script.generate_graph(SigmaAll,conj_pos);
                         std::cout << "° Positive datasets" << std::endl;
-                        print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph.size());
+                        print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph.shiftLabelsToNodes().size());
                     }
                 }
                 {
@@ -376,6 +389,28 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
     }
 
 
+}
+
+input_pipeline &
+getSemanticsDecomposition(bool semantisch, input_pipeline &Pip, std::unordered_set<std::string> &SigmaAll2,
+                          const std::unordered_map<std::string, std::string> &map,
+                          const std::vector<std::string> &pos_atom_log, for_semantisch_inconsistency &ref,
+                          const std::string &Uppercase, const ltlf &test, const std::string &str) {
+    Pip.final_model = test;
+    Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, str+"out", false, true, map);
+    //size_t X = Pip.GraphVector.size();
+
+    std::cout << " ** Loading chunks " << Uppercase << " graph: " << str << std::endl;
+    if (semantisch)  {
+        for (const auto& g : Pip.GraphVector) {
+            ref.collect_traces_from_model_clause_as_graph(g);
+        }
+        auto result = ref.compute_in_triplicate(pos_atom_log);
+        std::cout << " - " << Uppercase << " model semantic (I_Sigma) inconsistency = " << result.ISigma << std::endl;
+        std::cout << " - " << Uppercase << " model semantic (I_Max) inconsistency = " << result.IMax << std::endl;
+        std::cout << " - " << Uppercase << " model semantic (I_Hit) inconsistency = " << result.IHit << std::endl;
+    }
+    return Pip;
 }
 
 int main() {

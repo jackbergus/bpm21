@@ -185,7 +185,8 @@ FlexibleFA<size_t, std::string> lydia_entry_point::print_map(const std::unordere
         }
     }
 
-    FlexibleFA<size_t, std::string> result2;
+    /*FlexibleFA<size_t, std::string> result2;
     minimizeDFA<size_t, std::string>(result).ignoreNodeLabels2(result2);
-    return result2;
+    return result2;*/
+    return result;
 }

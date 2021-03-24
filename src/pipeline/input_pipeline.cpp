@@ -644,6 +644,7 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
         }
     }
 
+#define USE_FLLOAT
 #ifdef USE_FLLOAT
     if (N_graphs > 0) {
         // Parsing the file in Python, and then generating the sub-elements
@@ -669,9 +670,8 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
             }
         }
     }
-#endif
-
-
+    return {};
+#else
     if (useLydia) {
         std::cout << "Lydia" << std::endl;
         return lydia_script.generate_graph(SigmaAll, formula.replace_with_unique_name(old_name_to_new));
@@ -694,11 +694,8 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
             return result.makeDFAAsInTheory(SigmaAll);
         }
     }
-
-
-
-
     return {};
+#endif
 }
 
 

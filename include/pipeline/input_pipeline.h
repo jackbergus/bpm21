@@ -44,6 +44,7 @@ FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_
                                                           std::unordered_set<std::string>& SigmaAll);
 
 struct input_pipeline {
+    size_t count_loaded_clauses;
     label_var_atoms_map_t map1;
     label_set_t           act_universe;
     label_set_t           act_atoms;
