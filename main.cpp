@@ -65,7 +65,7 @@ void print_syntax_metrics(std::ostream& out, double d1, double d2, double d3) {
 #include<Eigen/SparseCholesky>
 #include <wrappers/aaltaf_wrapper.h>
 
-double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right) {
+double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t>& g) {
     /*auto U = left.getNodeIds();
     size_t N = U.size();
     auto V = right.getNodeIds();
@@ -87,8 +87,6 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
     typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SpMat;
     typedef Eigen::Triplet<double> T;
     std::vector<T> tripletList;
-    // Only among the nodes performing the match
-    FlexibleFA<std::string, size_t> g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(left, right);
 
     size_t N = g.maximumNodeId();
     size_t M = g.maximumEdgeId();
@@ -105,6 +103,7 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
     A.setFromTriplets(tripletList.begin(), tripletList.end());
     //SpMat BTB = A.transpose() * A;
 
+#if 0
     // Diagonal matrix D
     Eigen::VectorXd rowSums = (A * Eigen::VectorXd::Ones(A.cols())); // A -> BTB
     for (size_t i = 0, O = rowSums.size(); i<O; i++) {
@@ -116,12 +115,68 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
     SpMat L = diagonal_matrix * A * diagonal_matrix;
     double gamma = 1.0/((L * Eigen::VectorXd::Ones(L.cols())).maxCoeff());
 
-
-
     SpMat I(N, N);
     I.setIdentity();
     SpMat tmp = I - (gamma * L);
+#else
+    A = A * A.transpose();
+    SpMat D(N, N);
 
+    {
+        Eigen::VectorXd rowSums(N); rowSums.setZero();
+        for (int k = 0; k < A.outerSize(); ++k){
+            for (SpMat::InnerIterator it(A, k); it; ++it){
+                size_t i = it.row();
+                //size_t j = it.col();
+                double v = it.value();
+                rowSums(i) += v;
+                assert(v >= 0.0);
+            }
+        }
+
+        tripletList.clear();
+        for (size_t i = 0; i<N; i++) {
+            tripletList.emplace_back(i, i, 1/std::sqrt(rowSums(i)));
+        }
+        D.setFromTriplets(tripletList.begin(), tripletList.end());
+    }
+
+    A = D * A * D;
+
+    double maxCoeff = 0.0;
+    {
+        Eigen::VectorXd rowSums(N); rowSums.setZero();
+        for (int k = 0; k < A.outerSize(); ++k){
+            for (SpMat::InnerIterator it(A, k); it; ++it){
+                size_t i = it.row();
+                //size_t j = it.col();
+                double v = it.value();
+                rowSums(i) += v;
+                assert(v >= 0.0);
+            }
+        }
+
+        maxCoeff = (1.0/rowSums.maxCoeff());
+    }
+
+    A = maxCoeff * A;
+    SpMat I(N, N);
+    I.setIdentity();
+    SpMat tmp = I - A;
+
+    Eigen::SimplicialLLT<SpMat> solver;
+    Eigen::VectorXd b(N);
+
+    solver.compute(tmp);
+    if (solver.info() != Eigen::Success) {
+        return 0.0;
+    }
+    Eigen::VectorXd x = solver.solve(b);
+    return x.sum();
+
+#endif
+
+#if 0
     for (int k = 0; k < tmp.outerSize(); ++k){
         for (SpMat::InnerIterator it(tmp, k); it; ++it){
             size_t i = it.row();
@@ -130,7 +185,6 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
         }
     }
     exit(1);
-#if 0
     {
         for (int k = 0; k < BTB.outerSize(); ++k){
             for (SpMat::InnerIterator it(BTB, k); it; ++it){
@@ -157,7 +211,7 @@ double between_graph_classification_simple_kernel(FlexibleFA<std::string, size_t
 #else
         Eigen::SimplicialLLT<SpMat> solver;
 
-        solver.compute(tmp);
+        ///solver.compute(tmp);
         if (solver.info() != Eigen::Success) {
             return 0.0;
         }
@@ -187,10 +241,16 @@ getSemanticsDecomposition(bool semantisch, input_pipeline &Pip, std::unordered_s
                           for_semantisch_inconsistency &ref,
                           const std::string &Uppercase, const ltlf &test, const std::string &str);
 
-normalization_results between_graph_classification_normalized_similarity(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right) {
-    double L = between_graph_classification_simple_kernel(left, left);
-    double R = between_graph_classification_simple_kernel(right, right);
-    double LR = between_graph_classification_simple_kernel(left, right);
+normalization_results between_graph_classification_normalized_similarity(FlexibleFA<std::string, size_t>& left, FlexibleFA<std::string, size_t>& right, FlexibleFA<std::string, size_t>& g) {
+    // Only among the nodes performing the match
+    /*FlexibleFA<std::string, size_t> g;
+    if (useProduct) {
+        g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(left, right);
+    }*/
+
+    double L = between_graph_classification_simple_kernel(left);
+    double R = between_graph_classification_simple_kernel(right);
+    double LR = between_graph_classification_simple_kernel(g);
 
     double distance = std::sqrt(L+R-2*LR);
     return {LR, (LR/std::sqrt(L*R)), distance, distance/(distance+1.0)};
@@ -298,6 +358,7 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
         ref.neg_global_graph = neg_graph.shiftLabelsToNodes();
         ref.neg_graph_size = /*ref.neg_global_graph*/neg_graph.size();
         auto final_neg = Pip.final_model;
+#if 0
         {
             std::stringstream ss;
             ss << ref.neg_model;
@@ -308,35 +369,14 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
             ss << ltlf::And(ref.neg_model, ref.pos_model);
             std::cout << " - Positive & Negative syntax inconsistency = " << check_formula(ss.str()) << std::endl;
         }
-#ifdef NOSKIP
-        auto tmpWrong = Pip.decompose_genmodel_for_tiny_graphs(SigmaAll2, pos_neg.second+"out", false, true, map);
-        ref.neg_graph_size = tmpWrong.size();
-        ref.neg_global_graph = tmpWrong.shiftLabelsToNodes();
 
-        size_t Y = Pip.GraphVector.size();
-
-        if (semantisch) {
-            std::cout << " ** Loading chunks neg graph: " << pos_neg.second << std::endl;
-            for (const auto& g : Pip.GraphVector) {
-                ref.neg_trace_unfolder.collect_traces_from_model_clause_as_graph(g);
-            }
-            auto result = ref.neg_trace_unfolder.compute_in_triplicate(pos_atom_log);
-            std::cout << " - Negative model semantic (I_Sigma) inconsistency = " << result.ISigma << std::endl;
-            std::cout << " - Negative model semantic (I_Max) inconsistency = " << result.IMax << std::endl;
-            std::cout << " - Negative model semantic (I_Hit) inconsistency = " << result.IHit << std::endl;
-        }
-#endif
-
-        std::string Uppercase = "Positive";
-        auto test = final_pos;
-        auto str = pos_neg.first;
 
         getSemanticsDecomposition(semantisch, Pip, SigmaAll2, map, pos_atom_log,
                                   ref.pos_trace_unfolder, "Positive", final_pos, pos_neg.first);
 
         getSemanticsDecomposition(semantisch, Pip, SigmaAll2, map, neg_atom_log,
                                   ref.neg_trace_unfolder, "Negative", final_neg, pos_neg.second);
-
+#endif
         N++;
     }
 
@@ -361,6 +401,16 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                         FlexibleFA<size_t, std::string> pos_graph =  Pip.lydia_script.generate_graph(SigmaAll,conj_pos);
                         std::cout << "° Positive datasets" << std::endl;
                         print_syntax_metrics(std::cout, leftI.pos_graph_size, leftJ.pos_graph_size, pos_graph/*.shiftLabelsToNodes()*/.size());
+                        {
+                            //auto g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(leftI.pos_global_graph, leftJ.pos_global_graph);
+                            //std::cout << "° Positive datasets" << std::endl;
+                            auto g = pos_graph.shiftLabelsToNodes();
+                            auto res = between_graph_classification_normalized_similarity(leftI.pos_global_graph, leftJ.pos_global_graph, g);
+                            std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
+                            std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
+                            std::cout << " - Random Walks Distance: " << res.distance << std::endl;
+                            std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
+                        }
                     }
                 }
                 {
@@ -375,30 +425,22 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
                         FlexibleFA<size_t, std::string> pos_graph = Pip.lydia_script.generate_graph(SigmaAll,conj_neg);
                         std::cout << "° Negative datasets" << std::endl;
                         print_syntax_metrics(std::cout, leftI.neg_graph_size, leftJ.neg_graph_size, pos_graph/*.shiftLabelsToNodes()*/.size());
+                        {
+                            //std::cout << "° Negative datasets" << std::endl;
+                            auto g = pos_graph.shiftLabelsToNodes();
+                            auto res = between_graph_classification_normalized_similarity(leftI.neg_global_graph, leftJ.neg_global_graph, g);
+                            std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
+                            std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
+                            std::cout << " - Random Walks Distance: " << res.distance << std::endl;
+                            std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
+                        }
                     }
                 }
 
 
             }
 #endif
-            if (semantisch) {
-                {
-                    std::cout << "° Positive datasets" << std::endl;
-                    auto res = between_graph_classification_normalized_similarity(leftI.pos_global_graph, leftJ.pos_global_graph);
-                    std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
-                    std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
-                    std::cout << " - Random Walks Distance: " << res.distance << std::endl;
-                    std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
-                }
-                {
-                    std::cout << "° Negative datasets" << std::endl;
-                    auto res = between_graph_classification_normalized_similarity(leftI.neg_global_graph, leftJ.neg_global_graph);
-                    std::cout << " - Random Walks Kernel: " << res.similarity << std::endl;
-                    std::cout << " - Normalized Random Walks Kernel: " << res.normalized_similarity << std::endl;
-                    std::cout << " - Random Walks Distance: " << res.distance << std::endl;
-                    std::cout << " - Normalized Random Walks Distance: " << res.normalized_distance << std::endl;
-                }
-            }
+
             std::cout << std::endl << std::endl << std::endl;
         }
     }
