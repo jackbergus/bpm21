@@ -79,14 +79,18 @@ std::string input_pipeline::generate_fresh_atom() {
 }
 
 void input_pipeline::run_pipeline(const std::string &file, bool do_xes_renaming) {
-    ///std::cout << "Model = " << model << std::endl;
+#ifdef DEBUG
+    std::cout << "Model = " << model << std::endl;
+#endif
     final_model = model;
     init_pipeline(file, do_xes_renaming);
 
     if ((!double_map.empty()) || (!(string_map.empty()))) {
         decompose_and_atomize();
         final_model = setInterpretCompoundSubatom(model);
-        ///std::cout << "Atomized = " << final_model << std::endl;
+#ifdef DEBUG
+        std::cout << "Atomized = " << final_model << std::endl;
+#endif
     } else {
         final_model = model;
     }
@@ -279,8 +283,9 @@ input_pipeline::semantic_atom_set input_pipeline::_setInterpretCompoundSubatom(c
 
 
 void input_pipeline::decompose_and_atomize() {
+#ifdef DEBUG
     std::cout << "Generating the distinct intervals from the elements" << std::endl;
-
+#endif
     for (auto ref = string_map.begin(); ref != string_map.cend(); ref++){
         for (auto& ref2 : ref->second) {
             std::vector<DataPredicate> result;
@@ -303,7 +308,9 @@ void input_pipeline::decompose_and_atomize() {
         }
     }
 
+#ifdef DEBUG
     std::cout << "Generating the interval composition box" << std::endl;
+#endif
     for (auto& ref: interval_map) {
         std::vector<std::vector<DataPredicate>> W;
         for (const auto& v : cartesian_product(ref.second)) {
@@ -341,15 +348,21 @@ void input_pipeline::init_pipeline(const std::string &file, bool do_xes_renaming
     DeclareModelParse mp;
     std::ifstream stream (file);
 
+#ifdef DEBUG
     std::cout << "Parsing the file, and putting it in NNF, and simplifying it!" << std::endl;
+#endif
     model = mp.load_model_to_semantics(stream, do_xes_renaming, file.ends_with(".sdecl")).nnf();
+#ifdef DEBUG
     ///std::cout << "Model = " <<  model << std::endl;
 
     std::cout << "Collecting the atoms from the formula" << std::endl;
+#endif
 
     pipeline_scratch(model, map1, act_universe, double_map, string_map);
 
+#ifdef DEBUG
     std::cout << "Collecting the atoms associated to no interval" << std::endl;
+#endif
     for (const auto& act : act_universe) {
         auto it1 = double_map.find(act);
         bool test1 = (it1 == double_map.end()) || (it1->second.empty());

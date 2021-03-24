@@ -37,7 +37,7 @@ set(pipeline
         src/pipeline/SimpleXESSerializer.cpp
         include/pipeline/SimpleXESSerializer.h
         src/pipeline/foreign_data_loads.cpp
-        include/pipeline/foreign_data_loads.h)
+        include/pipeline/foreign_data_loads.h src/wrappers/aaltaf_wrapper.cpp src/alignment/result_semantisch_align.cpp include/alignment/result_semantisch_align.h for_semantisch_inconsistency.cpp for_semantisch_inconsistency.h)
 
 set(graphs
 
@@ -83,11 +83,12 @@ add_executable(bpm21
         src/graphs/third-party-wrappers/lydia_entry_point.cpp
         src/utils/xml_utils.cpp
         src/ltlf/PropositionalizedAtomsSet.cpp
-        #src/utils/numeric/hash_combine.cpp
+        src/utils/numeric/hash_combine.cpp
         src/ltlf/ltlf.cpp include/ltlf/ltlf.h
         src/declare/DeclareDataAware.cpp
         src/ltlf/DataPredicate.cpp
-        )
+        src/alignment/alignment_utils.cpp
+        src/alignment/result_semantisch_align.cpp )
 
 include_directories(submodules/date/include)
 
@@ -97,6 +98,7 @@ include_directories(submodules/aaltaf/submodules)
 include_directories(submodules/aaltaf/submodules/minisat)
 include_directories(submodules/aaltaf/submodules/ltlparser)
 
+add_subdirectory(submodules/eigen)
 include_directories(submodules/eigen)
 
 
@@ -107,4 +109,4 @@ add_subdirectory(submodules/lemon)
 include_directories(submodules/lemon)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/submodules/lemon)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf  lemon)
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf Eigen3::Eigen lemon)

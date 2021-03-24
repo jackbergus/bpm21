@@ -27,9 +27,16 @@
 #define BPM21_INPUT_PIPELINE_H
 
 #include <pipeline/pipeline_utils.h>
-//#include <graphs/third-party-wrappers/lydia_entry_point.h>
 #include <graphs/FlexibleFA.h>
 #include <graphs/third-party-wrappers/FLLOATScriptRunner.h>
+
+#ifdef TRUE
+#undef TRUE
+#endif
+#ifdef FALSE
+#undef FALSE
+#endif
+
 #include <graphs/third-party-wrappers/lydia_entry_point.h>
 
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs,
