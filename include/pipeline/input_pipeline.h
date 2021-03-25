@@ -39,6 +39,8 @@
 
 #include <graphs/third-party-wrappers/lydia_entry_point.h>
 
+FlexibleFA<size_t, std::string> complexShiftBackToEdges(const FlexibleFA<std::string, size_t>& itnM, std::unordered_set<std::string>& SigmaAll);
+
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs,
                                                           const FlexibleFA<size_t, std::string>& rhs,
                                                           std::unordered_set<std::string>& SigmaAll);

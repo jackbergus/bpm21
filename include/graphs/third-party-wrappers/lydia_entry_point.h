@@ -60,9 +60,9 @@ public:
      */
     whitemech::lydia::ldlf_ptr parse_formula_from_ltlf_file(const std::string& filename);
 
-    FlexibleFA<size_t, std::string> generate_graph(const std::unordered_set<std::string> &SigmaAll, const ltlf& element) {
+    FlexibleFA<size_t, std::string> generate_graph(const std::unordered_set<std::string> &SigmaAll, const ltlf& element, bool minimize = true) {
         std::vector<size_t> begins, ends;
-        return print_map(SigmaAll, begins, ends,generate_map(convert_formula_from_objects(element), "lydia.pdf", begins, ends));
+        return print_map(SigmaAll, begins, ends,generate_map(convert_formula_from_objects(element), "lydia.pdf", begins, ends), minimize);
     }
 
     whitemech::lydia::ldlf_ptr convert_formula_from_objects(const ltlf& element);
@@ -77,7 +77,7 @@ public:
                           const std::unordered_set<std::string> &SigmaAll,
                           std::vector<size_t>& begins,
                           std::vector<size_t>& ends,
-                          const std::vector<std::pair<std::pair<int,int>, std::vector<std::vector<whitemech::lydia::atom>>>>& map);
+                          const std::vector<std::pair<std::pair<int,int>, std::vector<std::vector<whitemech::lydia::atom>>>>& map, bool minimize = true);
 
 
     ~lydia_entry_point() {

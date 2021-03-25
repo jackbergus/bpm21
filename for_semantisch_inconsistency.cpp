@@ -32,3 +32,7 @@ result_semantisch_align for_semantisch_inconsistency::compute_in_triplicate(cons
     }
     return {result_sigma, result_max, result_hit};
 }
+
+void for_semantisch_inconsistency::collect_clauses_from_fsi(const for_semantisch_inconsistency &ref) {
+    V.insert(V.end(), ref.V.begin(), ref.V.end());
+}

@@ -19,8 +19,13 @@ struct for_semantisch_inconsistency {
     std::vector<FlexibleFA<std::string, size_t>> V;
 
     for_semantisch_inconsistency(const std::string& epsilon);
-
+    for_semantisch_inconsistency(const for_semantisch_inconsistency& ) = default;
+    for_semantisch_inconsistency(for_semantisch_inconsistency&& ) = default;
+    for_semantisch_inconsistency& operator=(const for_semantisch_inconsistency& ) = default;
+    for_semantisch_inconsistency& operator=(for_semantisch_inconsistency&& ) = default;
     void collect_traces_from_model_clause_as_graph(const FlexibleFA<size_t, std::string>& g);
+
+    void collect_clauses_from_fsi(const for_semantisch_inconsistency& ref);
 
     result_semantisch_align compute_in_triplicate(const std::vector<std::string>& log);
 };

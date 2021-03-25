@@ -530,11 +530,18 @@ std::string ignore3(const std::string& x, const std::string& y) {
 
 namespace fs = std::filesystem;
 
+FlexibleFA<size_t, std::string> complexShiftBackToEdges(const FlexibleFA<std::string, size_t>& itnM, std::unordered_set<std::string>& SigmaAll) {
+    FlexibleFA<size_t, std::string> result;
+    FlexibleFA<size_t, std::string> productGraph = itnM.shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
+    //result = fast_minimization(productGraph);
+    minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
+    return result;
+}
 
 FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
     FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
     FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
-    {
+    /*{
         std::ofstream f{"L.dot"};
         lhs.dot(f, false);
         f.flush(); f.close();
@@ -543,7 +550,7 @@ FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_
         std::ofstream f{"R.dot"};
         rhs.dot(f, false);
         f.flush(); f.close();
-    }
+    }*/
     FlexibleFA<size_t, std::string> result;
     auto itnM = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R);
 
@@ -551,11 +558,11 @@ FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_
     //result = fast_minimization(productGraph);
     minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
     ///result = fast_minimization(productGraph);
-    {
+    /*{
         std::ofstream f{"itnM.dot"};
         result.dot(f, false);
         f.flush(); f.close();
-    }
+    }*/
     return result;
 }
 

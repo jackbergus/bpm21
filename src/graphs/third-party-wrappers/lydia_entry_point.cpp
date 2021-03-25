@@ -121,7 +121,7 @@ lydia_entry_point::generate_map(whitemech::lydia::ldlf_ptr parsed_formula, const
 
 FlexibleFA<size_t, std::string> lydia_entry_point::print_map(const std::unordered_set<std::string> &SigmaAll,
                                                              std::vector<size_t> &begins, std::vector<size_t> &ends,
-                                                             const std::vector<std::pair<std::pair<int, int>, std::vector<std::vector<whitemech::lydia::atom>>>> &map) {
+                                                             const std::vector<std::pair<std::pair<int, int>, std::vector<std::vector<whitemech::lydia::atom>>>> &map, bool minimize) {
     //static const std::string wedge{" ∧ "};
     FlexibleFA<size_t, std::string> result;
     std::unordered_set<size_t> F{ends.begin(), ends.end()}, I{begins.begin(), begins.end()};
@@ -185,8 +185,11 @@ FlexibleFA<size_t, std::string> lydia_entry_point::print_map(const std::unordere
         }
     }
 
-    /*FlexibleFA<size_t, std::string> result2;
-    minimizeDFA<size_t, std::string>(result).ignoreNodeLabels2(result2);
-    return result2;*/
-    return result;
+    if (minimize) {
+        FlexibleFA<size_t, std::string> result2;
+        minimizeDFA<size_t, std::string>(result).ignoreNodeLabels2(result2);
+        return result2;
+    } else {
+        return result;
+    }
 }
