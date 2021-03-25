@@ -416,11 +416,13 @@ void trient(const std::vector<std::pair<std::string, std::string>>& models) {
 
 
 int main() {
-
-
     std::vector<std::pair<std::string, std::string>> dataset;
-    dataset.emplace_back("data/trient/miner/pos.sdecl", "data/trient/miner/neg.sdecl");
+    dataset.emplace_back("data/trient/decisionTree/pos.sdecl", "data/trient/decisionTree/neg.sdecl");
+    dataset.emplace_back("data/trient/ripper/pos.sdecl", "data/trient/ripper/neg.sdecl");
+    dataset.emplace_back("data/trient/modelDiff/pos.sdecl", "data/trient/modelDiff/neg.sdecl");
     dataset.emplace_back("data/trient/explainer/pos.sdecl", "data/trient/explainer/neg.sdecl");
+    dataset.emplace_back("data/trient/miner/pos.sdecl", "data/trient/miner/neg.sdecl");
+
     trient(dataset);
     aalta::aalta_formula::destroy();
 

@@ -54,7 +54,10 @@ double align(const FlexibleFA<std::string, size_t>& x, const std::string& path, 
     }
 
     size_t tmpIni = *graph.initial_nodes.begin();
-    size_t tmpFin = *graph.final_nodes.begin();
+    size_t tmpFin = -1;
+    if (!graph.final_nodes.empty()) {
+        tmpFin = *graph.final_nodes.begin();
+    }
     std::vector<size_t> V = graph.getNodeIds();
     std::unordered_map<size_t, size_t> map;
     size_t Vsize = V.size();

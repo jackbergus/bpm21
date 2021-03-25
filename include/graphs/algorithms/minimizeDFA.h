@@ -101,7 +101,7 @@ void marcaRec3(size_t M_offset, std::vector<table_content> &M);
 
 template<typename NodeElement, typename EdgeLabel>
 FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeElement, EdgeLabel>& graph) {
-    std::cout << "minimizeDFA" << std::endl;
+    ///std::cout << "minimizeDFA" << std::endl;
     /*{
         std::ofstream before{"before.dot"};
         graph.dot(before, false);
@@ -160,7 +160,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
     //std::sort(v.begin(), v.end());
     adjacency_graph graph_tr_clos;
     {
-        std::cout << " * staircase table fill-up" << std::endl;
+        ///std::cout << " * staircase table fill-up" << std::endl;
         {
             for (size_t j = 0; j < V; j++) {
                 graph_tr_clos.add_node();
@@ -177,7 +177,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
             }
         }
 
-        std::cout << " * Pair" << std::endl;
+        ///std::cout << " * Pair" << std::endl;
         for (size_t pos = 0, tabPos = M.size(); pos<tabPos; pos++) {
             auto cp2 = &M[pos];
             if (!cp2->is_bool) {
@@ -215,7 +215,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
     }
 
     using bitset = boost::dynamic_bitset<>;
-    std::cout << " * Equivalence Classes" << std::endl;
+    ///std::cout << " * Equivalence Classes" << std::endl;
     std::vector<std::unordered_set<size_t>> trivial_eq_map(V);
     std::unordered_set<size_t> equivalentNodes, VS;
     VS.insert(v.begin(), v.end());
@@ -230,7 +230,7 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         }
     }
 
-    std::cout << " * Transitive Closure" << std::endl;
+    ///std::cout << " * Transitive Closure" << std::endl;
     std::vector<bool> visited_E(V, false);
     std::unordered_map<std::unordered_set<size_t>, size_t> eq_map;
     for (size_t k : equivalentNodes) {
@@ -247,14 +247,14 @@ FlexibleFA<std::vector<NodeElement>, EdgeLabel> minimizeDFA(FlexibleFA<NodeEleme
         }
     }
 
-    std::cout << " * Unordered difference" << std::endl;
+    ///std::cout << " * Unordered difference" << std::endl;
     for (const auto& cp : unordered_difference(VS, equivalentNodes)) {
         //std::cout << cp << std::endl;
         trivial_eq_map[cp] = {cp};
         eq_map[{cp}] = result.addNewNodeWithLabel({node_labels[cp]});
     }
 
-    std::cout << " * graph recreation" << std::endl;
+    ///std::cout << " * graph recreation" << std::endl;
     for (size_t pos = 0; pos<V; pos++) {
         if (isInitial[pos]) {
             assert(eq_map.contains(trivial_eq_map.at(pos)));

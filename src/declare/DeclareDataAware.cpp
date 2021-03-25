@@ -229,6 +229,13 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
 
         case NotRespExistence:
             return ltlf::Implies(left, ltlf::Neg(ltlf::Diamond(right)));
+
+        case NegNotChainSuccession:
+            return ltlf::Diamond(ltlf::And(left, ltlf::Neg(ltlf::Next(right.negate()))));
+
+        case VacNegNotChainSuccession:
+            return ltlf::Or(ltlf::Diamond(ltlf::And(left, ltlf::Neg(ltlf::Next(right.negate())))),
+                            ltlf::Box(left.negate()));
     }
 }
 
