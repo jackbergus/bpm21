@@ -18,9 +18,6 @@ include_directories(include)
 include_directories(submodules/json/include)
 include_directories(submodules/magic_enum/include)
 
-add_subdirectory(submodules/lydia-full)
-include_directories(submodules/lydia-full/lib/include)
-include_directories(submodules/lydia-full/third_party/spdlog/include)
 
 find_package(Boost REQUIRED regex)
 include_directories(${BOOST_INCLUDE_DIRS})
@@ -40,8 +37,6 @@ set(graphs
 
         src/graphs/adjacency_graph.cpp
         src/graphs/minimizeDFA.cpp
-        src/ltlf/westergraad_semantics/FormulaToWestergaardFA.cpp
-        include/ltlf/westergraad_semantics/FormulaToWestergaardFA.h
         include/ltlf/westergraad_semantics/WestergaardNFALabel.h src/graphs/third-party-wrappers/FLLOATScriptRunner.cpp include/graphs/third-party-wrappers/FLLOATScriptRunner.h fast_minimization.cpp fast_minimization.h)
 
 set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
@@ -76,7 +71,7 @@ add_executable(bpm21
         ${pipeline}
         ${graphs}
 
-        src/graphs/third-party-wrappers/lydia_entry_point.cpp
+
         src/utils/xml_utils.cpp
         src/ltlf/PropositionalizedAtomsSet.cpp
         src/utils/numeric/hash_combine.cpp
@@ -85,6 +80,5 @@ add_executable(bpm21
         src/ltlf/DataPredicate.cpp)
 
 include_directories(submodules/date/include)
-add_subdirectory(submodules/aaltaf)
 
-target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads lydia z aaltaf)
+target_link_libraries(bpm21 antlr4_static ${Boost_LIBRARIES} Threads::Threads )

@@ -30,7 +30,6 @@
 //#include <graphs/third-party-wrappers/lydia_entry_point.h>
 #include <graphs/FlexibleFA.h>
 #include <graphs/third-party-wrappers/FLLOATScriptRunner.h>
-#include <graphs/third-party-wrappers/lydia_entry_point.h>
 
 struct input_pipeline {
     label_var_atoms_map_t map1;
@@ -43,7 +42,6 @@ struct input_pipeline {
     //lydia_entry_point     lydia_ep;
 
     FLLOATScriptRunner pyscript;
-    lydia_entry_point  lydiascript;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 

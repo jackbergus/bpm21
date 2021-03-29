@@ -489,8 +489,6 @@ std::vector<std::vector<std::string>> input_pipeline::print_atomized_traces(cons
 }
 
 #include <graphs/FlexibleFA.h>
-#include <ltlf/westergraad_semantics/FormulaToWestergaardFA.h>
-#include <graphs/algorithms/shiftLabelsToNodes.h>
 #include <graphs/algorithms/minimizeDFA.h>
 
 std::string ignore3(const std::string& x, const std::string& y) {
