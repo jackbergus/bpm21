@@ -32,12 +32,6 @@ set(pipeline
         src/pipeline/pipeline_utils.cpp
         src/pipeline/input_pipeline.cpp src/pipeline/SimpleXESSerializer.cpp include/pipeline/SimpleXESSerializer.h src/pipeline/foreign_data_loads.cpp include/pipeline/foreign_data_loads.h)
 
-set(graphs
-
-
-        src/graphs/adjacency_graph.cpp
-        src/graphs/minimizeDFA.cpp
-        include/ltlf/westergraad_semantics/WestergaardNFALabel.h src/graphs/third-party-wrappers/FLLOATScriptRunner.cpp include/graphs/third-party-wrappers/FLLOATScriptRunner.h fast_minimization.cpp fast_minimization.h)
 
 set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
                   antlr4/cpp/antlr4/DADLexer.cpp
@@ -62,7 +56,7 @@ set(antlr_sources antlr4/cpp/antlr4/DADBaseListener.cpp
         antlr4/cpp/antlr4/TracesParser.cpp
         antlr4/cpp/antlr4/TracesVisitor.cpp
         src/declare/DataTraceParse.cpp
-        include/declare/DataTraceParse.h src/graphs/third-party-wrappers/ParseFFLOATDot.cpp include/graphs/third-party-wrappers/ParseFFLOATDot.h src/graphs/third-party-wrappers/FLLOATSimplePropParser.cpp include/graphs/third-party-wrappers/FLLOATSimplePropParser.h)
+        include/declare/DataTraceParse.h)
 
 add_executable(bpm21
         main.cpp

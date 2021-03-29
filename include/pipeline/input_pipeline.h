@@ -27,9 +27,6 @@
 #define BPM21_INPUT_PIPELINE_H
 
 #include <pipeline/pipeline_utils.h>
-//#include <graphs/third-party-wrappers/lydia_entry_point.h>
-#include <graphs/FlexibleFA.h>
-#include <graphs/third-party-wrappers/FLLOATScriptRunner.h>
 
 struct input_pipeline {
     label_var_atoms_map_t map1;
@@ -38,10 +35,6 @@ struct input_pipeline {
     double_intervals_map_t  double_map;
     string_intervals_map_t  string_map;
     ltlf model, final_model;
-
-    //lydia_entry_point     lydia_ep;
-
-    FLLOATScriptRunner pyscript;
 
     using semantic_atom_set = std::unordered_set<std::string>;
 
@@ -68,14 +61,14 @@ struct input_pipeline {
                                std::unordered_set<std::string> &SigmaAll, bool serialize_original_to_xes);
 
     void run_pipeline(const std::string &file, bool do_xes_renaming = true);
-    FlexibleFA<size_t, std::string>
+    void
     decompose_genmodel_for_tiny_graphs(std::unordered_set<std::string> &SigmaAll, const std::string &single_line_file, bool safely_map_names) {
-        return decompose_ltlf_for_tiny_graphs(final_model, SigmaAll, single_line_file, safely_map_names);
+        decompose_ltlf_for_tiny_graphs(final_model, SigmaAll, single_line_file, safely_map_names);
     }
 
 
 private:
-    FlexibleFA<size_t, std::string>
+    void
     decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
                                    const std::string &single_line_clause_file, bool safely_map_names);
 

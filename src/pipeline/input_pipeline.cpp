@@ -26,7 +26,6 @@
 #include <declare/DeclareModelParse.h>
 #include "pipeline/input_pipeline.h"
 #include "pipeline/SimpleXESSerializer.h"
-#include "../../fast_minimization.h"
 
 #ifdef TRUE
 #undef TRUE
@@ -488,53 +487,21 @@ std::vector<std::vector<std::string>> input_pipeline::print_atomized_traces(cons
 
 }
 
-#include <graphs/FlexibleFA.h>
-#include <graphs/algorithms/minimizeDFA.h>
 
 std::string ignore3(const std::string& x, const std::string& y) {
     return x+y;
 }
 
 #include <filesystem>
-#include <graphs/third-party-wrappers/ParseFFLOATDot.h>
 
 namespace fs = std::filesystem;
 
 
-FlexibleFA<size_t, std::string> cross_product_westergaard(const FlexibleFA<size_t, std::string>& lhs, const FlexibleFA<size_t, std::string>& rhs, std::unordered_set<std::string>& SigmaAll) {
-    FlexibleFA<std::string, size_t> L =  lhs.shiftLabelsToNodes();
-    FlexibleFA<std::string, size_t> R =  rhs.shiftLabelsToNodes();
-    {
-        std::ofstream f{"L.dot"};
-        lhs.dot(f, false);
-        f.flush(); f.close();
-    }
-    {
-        std::ofstream f{"R.dot"};
-        rhs.dot(f, false);
-        f.flush(); f.close();
-    }
-    FlexibleFA<size_t, std::string> result;
-    auto itnM = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(L,R);
-    /*{
-        std::ofstream f{"itnM.dot"};
-        itnM.dot(f, false);
-        f.flush(); f.close();
-    }*/
-    FlexibleFA<size_t, std::string> productGraph = itnM.shiftLabelsToEdges().makeDFAAsInTheory(SigmaAll);
-    //result = fast_minimization(productGraph);
-    minimizeDFA<size_t, std::string>(productGraph).ignoreNodeLabels2(result);
-    ///result = fast_minimization(productGraph);
-    return result;
-}
-
-FlexibleFA<size_t, std::string>
+void
 input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unordered_set<std::string> &SigmaAll,
                                                const std::string &single_line_clause_file, bool safely_map_names) {
-#if 1
-    //std::vector<std::string> SigmaVector;
-    //SigmaVector.insert(SigmaVector.end(), SigmaAll.begin(), SigmaAll.end());
-    std::vector<FlexibleFA<size_t, std::string>> GraphVector;
+
+
     std::vector<ltlf> formulas_to_dfas;
     size_t N_graphs = 0;
     std::unordered_map<std::string, std::string> old_name_to_new, new_name_to_old;
@@ -586,7 +553,6 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
 
         std::reverse(formulas_to_dfas.begin(),formulas_to_dfas.end());
 
-        // Creating the actual file, to be parsed by the python script
         N_graphs = formulas_to_dfas.size();
 
         if (N_graphs > 0) {
@@ -598,105 +564,6 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula, std::unorder
             file.close();
         }
     }
-
-    if (N_graphs > 0) {
-
-#define PYTHON
-#ifdef PYTHON
-        // Parsing the file in Python, and then generating the sub-elements
-        fs::path slcf_path = single_line_clause_file;
-        pyscript.process_expression(fs::absolute(slcf_path).string());
-
-        // Getting the graphs from FLLOAT
-        // Plus, ensuring that all the nodes that have no edges with a specific
-        // label expected from the label set, have thus edges to a new sink node
-        for (size_t i = 1; i<=N_graphs; i++) {
-            ParseFFLOATDot graph_loader;
-            graph_loader.need_back_conversion = safely_map_names;
-            graph_loader.back_conv = &new_name_to_old;
-            std::ifstream graph_operand_file{single_line_clause_file + "_graph_" + std::to_string(i) +".dot"};
-            auto l = GraphVector.emplace_back(
-                    graph_loader
-                        .parse(graph_operand_file, SigmaAll)
-                        .makeDFAAsInTheory(SigmaAll)
-                        );
-            {
-                std::ofstream graph_operand_file_after{single_line_clause_file + "_graphAfter_" + std::to_string(i) +".dot"};
-                l.dot(graph_operand_file_after, false);
-            }
-        }
-#else
-        size_t i = 0;
-        for (const ltlf& formula : formulas_to_dfas) {
-            lydiascript.generate_map(
-                    lydiascript.convert_formula_from_objects(formula),
-                    single_line_clause_file + "_graph_" + std::to_string(i) +".dot");
-            i++;
-        }
-#endif
-    }
-
-
-    if (GraphVector.empty()) {
-        // If there are no graphs, return an empty graph
-        return {};
-    } else if (GraphVector.size() == 1) {
-        auto G = GraphVector.at(0);
-        G.pruneUnreachableNodes();
-        return G.makeDFAAsInTheory(SigmaAll);
-    } else {
-        std::cout << " * First product" << std::endl;
-        FlexibleFA<size_t, std::string> result = cross_product_westergaard(GraphVector.at(0), GraphVector.at(1), SigmaAll);
-
-        for (size_t i = 2, N = GraphVector.size(); i<N; i++) {
-            std::cout << " * Product #" << i << std::endl;
-            result = cross_product_westergaard(result, GraphVector.at(i), SigmaAll);
-        }
-        return result.makeDFAAsInTheory(SigmaAll);
-    }
-
-
-#if 0
-    if (GraphVector.empty()) {
-        return {};
-    } else if (GraphVector.size() == 1) {
-        FlexibleFA<size_t, std::string> G;
-        {
-            FlexibleFA<size_t, std::string> l = GraphVector.at(0).shiftLabelsToEdges();
-            minimizeDFA<size_t, std::string>(l).ignoreNodeLabels(G);
-        }
-        return G;
-    } else {
-        FlexibleFA<std::string, size_t> curr;
-        {
-            FlexibleFA<size_t, std::string> g = FlexibleFA<std::string, size_t>::crossProductWithNodeLabels(GraphVector.at(0), GraphVector.at(1)).shiftLabelsToEdges().makeDFAAsInTheory();
-            FlexibleFA<size_t, std::string> G;
-            {
-                FlexibleFA<std::vector<size_t>, std::string> gr = minimizeDFA<size_t, std::string>(g);
-                gr.ignoreNodeLabels(G);
-            }
-            curr = G.shiftLabelsToNodes();
-        }
-        /*for (size_t i = 2, N = GraphVector.size(); i<N; i++) {
-            FlexibleFA<size_t, std::string> g = FlexibleFA<std::string, std::string>::crossProductWithNodeLabels(curr, GraphVector.at(i)).shiftLabelsToEdges().makeDFAAsInTheory();
-            FlexibleFA<size_t, std::string> G;
-            {
-                FlexibleFA<std::vector<size_t>, std::string> gr = minimizeDFA<size_t, std::string>(g);
-                gr.ignoreNodeLabels(G);
-            }
-            curr = G.shiftLabelsToNodes();
-        }*/
-        auto l = curr.shiftLabelsToEdges();
-        FlexibleFA<size_t, std::string> G;
-        minimizeDFA<size_t, std::string>(l).ignoreNodeLabels(G);
-        return G;
-    }
-#else
-    return {};
-#endif
-#else
-    return {};
-#endif
 }
 
 

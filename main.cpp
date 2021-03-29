@@ -27,26 +27,7 @@
 #include <pipeline/input_pipeline.h>
 
 #include "declare/DataTraceParse.h"
-#include "graphs/third-party-wrappers/ParseFFLOATDot.h"
 #include "pipeline/foreign_data_loads.h"
-
-void test_data_predicate() {
-    DataPredicate x_1{"x", LT, 0.2};
-    DataPredicate x_2{"x", GEQ, -1.0};
-    std::cout << x_1 << std::endl;
-    std::cout << x_2 << std::endl;
-    x_1.intersect_with(x_2);
-    std::cout << x_1 << std::endl;
-
-    DataPredicate x_3{"x", NEQ, 5.0};
-    x_1.intersect_with(x_3);
-    std::cout << x_1 << std::endl;
-
-    DataPredicate x_4{"x", NEQ, 0.001};
-    x_1.intersect_with(x_4);
-    std::cout << x_1 << std::endl;
-}
-
 #include <utils/stream_out.h>
 #include <declare/DeclareDataAware.h>
 
@@ -65,7 +46,7 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
     std::vector<std::vector<std::vector<std::string>>> M;
 
     std::string N =  std::to_string(n);
-    std::string converted_file = "/media/giacomo/Data/bz/CLionProjects/bpm21/data/converted/"+N+"constr";
+    std::string converted_file = "/media/giacomo/Data/bz/CLionProjects/bpm21_old/data/converted/"+N+"constr";
     std::vector<std::string> LOGS;
 
     for (size_t i = 0; i<=mod; i++) {
@@ -73,7 +54,7 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
         for (size_t single_len : lengths) {
             if (i == 0)
                 to_test_correct.insert(LOGS.size());
-            LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21/data/curr/"+N+" CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes");
+            LOGS.emplace_back("/media/giacomo/Data/bz/CLionProjects/bpm21_old/data/curr/"+N+" CONSTRAINTS/"+I+"_mod/length_"+std::to_string(single_len)+".xes");
         }
     }
 
@@ -104,17 +85,7 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
     {
         std::ofstream f{converted_file+"_graph.dot"};
         std::string single_line{converted_file+"_single_line_clause.txt"};
-        auto g= Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false);
-        g.dot(f, false);
-        f.flush(); f.close();
-        for (const std::vector<std::vector<std::string>>& log : M) {
-            size_t j = 1;
-            for (const std::vector<std::string>& trace : log) {
-                std::cout << trace.size() << " testing " << j << "..." << std::endl;
-                g.test_correctness(trace);
-                j++;
-            }
-        }
+        Pip.decompose_genmodel_for_tiny_graphs(SigmaAll, single_line, false);
     }
 }
 
@@ -122,16 +93,16 @@ void pipeline(size_t n, size_t mod, const std::vector<size_t>& lengths) {
 void pipeline_all() {
     {
         std::vector<size_t> lengths = {10,15,20,25,30};
-        pipeline(3, 0, lengths);
-        pipeline(5, 0, lengths);
+        pipeline(3, 3, lengths);
+        pipeline(5, 3, lengths);
     }
     {
         std::vector<size_t> lengths = {15,20,25,30};
-        pipeline(7, 0, lengths);
+        pipeline(7, 3, lengths);
     }
     {
         std::vector<size_t> lengths = {20,25,30};
-        pipeline(10, 0, lengths);
+        pipeline(10, 3, lengths);
     }
 }
 
