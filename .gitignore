@@ -15,3 +15,11 @@ data/*
 *.zip
 submodules/lydia-full/*
 submodules/lydia-full/
+data/*
+data/
+dist/*
+dist/
+readme/
+readme/*
+venv/*
+venv/
