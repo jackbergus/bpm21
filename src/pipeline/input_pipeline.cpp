@@ -605,12 +605,12 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
         if (formula.casusu == AND) {
             auto falsehood = ltlf::True().negate().simplify();
             auto truth = ltlf::True();
-            std::unordered_set<ltlf> set;
-            formula.collectStructuralElements(AND, set, true);
-            if (set.contains(truth))
-                set.erase(truth);
-            if (!set.contains(falsehood)) {
-                bool doNotInsert = false;
+            std::vector<ltlf> set;
+            formula.collectStructuralElements(AND, set, false);
+            /*if (set.contains(truth))
+                set.erase(truth);*/
+            if (/*!set.contains(falsehood)*/true) {
+                /*bool doNotInsert = false;
                 for (const auto &arg : set) {
                     if (set.contains(arg.negate().simplify())) {
                         doNotInsert = true;
@@ -619,10 +619,14 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
                 }
                 if (doNotInsert) {
                     set.clear();
-                }
+                }*/
                 for (const auto& f : set) {
+                    if (f == truth) continue;
                     if (safely_map_names) {
-                        formulas_to_dfas.emplace_back(f.replace_with_unique_name(old_name_to_new));
+                        //std::cout << f << std::endl;
+                        auto l = f.replace_with_unique_name(old_name_to_new);
+                        //std::cout << l << std::endl << std::endl;
+                        formulas_to_dfas.emplace_back(l);
                     } else {
                         formulas_to_dfas.emplace_back(f);
                     }
@@ -630,13 +634,16 @@ input_pipeline::decompose_ltlf_for_tiny_graphs(const ltlf &formula,
             }
         } else {
             if (safely_map_names) {
-                formulas_to_dfas.emplace_back(formula.replace_with_unique_name(old_name_to_new));
+                //std::cout << formula << std::endl;
+                auto l = formula.replace_with_unique_name(old_name_to_new);
+                //std::cout << l << std::endl << std::endl;
+                formulas_to_dfas.emplace_back(l);
             } else {
                 formulas_to_dfas.emplace_back(formula);
             }
         }
 
-        std::reverse(formulas_to_dfas.begin(),formulas_to_dfas.end());
+        //std::reverse(formulas_to_dfas.begin(),formulas_to_dfas.end());
 
         // Creating the actual file, to be parsed by the python script
         N_graphs = formulas_to_dfas.size();

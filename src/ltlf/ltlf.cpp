@@ -63,11 +63,11 @@ struct ltlf ltlf::And(const ltlf &left, const ltlf &right) {
 }
 
 struct ltlf ltlf::Diamond(const ltlf &sub) {
-    return Until(True(), sub);
+    return Until(ltlf::True(), sub);
 }
 
 struct ltlf ltlf::Box(const ltlf &sub) {
-    return Neg(Diamond(Neg(sub)));
+    return Release({FALSE}, sub);
 }
 
 struct ltlf ltlf::Last() {
@@ -128,6 +128,10 @@ std::ostream &operator<<(std::ostream &os, const ltlf &syntax) {
             return os << "(" << syntax.args[0] << ") R (" << syntax.args[1] << ')'<< reset;
         case TRUE:
             return os << "true"<< reset;
+        case BOX:
+            return os << "G(" << syntax.args[0] << ")"<< reset;
+        case DIAMOND:
+            return os << "F(" << syntax.args[0] << ")"<< reset;
         default:
             return os << "false"<< reset;
     }
@@ -150,6 +154,10 @@ struct ltlf ltlf::replace_with_unique_name(const std::unordered_map<std::string,
             return ltlf::Neg(args.at(0).replace_with_unique_name(map));
         case NEXT:
             return ltlf::Next(args.at(0).replace_with_unique_name(map));
+        case DIAMOND:
+            return ltlf::Diamond(args.at(0).replace_with_unique_name(map));
+        case BOX:
+            return ltlf::Box(args.at(0).replace_with_unique_name(map));
         case OR:
             return ltlf::Or(args.at(0).replace_with_unique_name(map),
                             args.at(1).replace_with_unique_name(map));
@@ -221,7 +229,7 @@ bool ltlf::easy_interpret(const std::string &map) const {
 }*/
 
 struct ltlf ltlf::oversimplify() const {
-    auto falsehood = True().negate().simplify();
+    /*auto falsehood = True().negate().simplify();
     auto truth = True();
     switch (casusu) {
         case NEG_OF:
@@ -330,14 +338,15 @@ struct ltlf ltlf::oversimplify() const {
             return ltlf::Release(args.at(0).oversimplify(), args.at(1).oversimplify()).setBeingCompound(is_compound_predicate);
         default:
             return {*this};
-    }
+    }*/
+    return *this;
 }
 
-void ltlf::collectStructuralElements(formula_t type, std::unordered_set<ltlf> &set, bool simplificationType) const {
+void ltlf::collectStructuralElements(formula_t type, std::vector<ltlf> &set, bool simplificationType) const {
     if (type != casusu) return;
     else for (const auto& arg : args) {
             if (arg.casusu == type) arg.collectStructuralElements(type, set, simplificationType);
-            else set.emplace(simplificationType ? arg.oversimplify() : arg.simplify());
+            else set.emplace_back(simplificationType ? arg.oversimplify() : arg.simplify());
         }
 }
 
@@ -556,6 +565,8 @@ bool ltlf::operator==(const ltlf &rhs) const {
         case UNTIL:
         case RELEASE:
         case NEG_OF:
+        case BOX:
+        case DIAMOND:
             return (args == rhs.args);
 
         case NUMERIC_ATOM:
@@ -563,14 +574,13 @@ bool ltlf::operator==(const ltlf &rhs) const {
 
         case AND:
         case OR: {
-            std::unordered_set<ltlf> leftS, rightS;
+            std::vector<ltlf> leftS, rightS;
             collectStructuralElements(casusu, leftS, true);
             rhs.collectStructuralElements(casusu, rightS, true);
-
             for (const auto& arg : leftS)
-                if (!rightS.contains(arg)) return false;
+                if (std::find(rightS.begin(), rightS.end(), arg) == rightS.end()) return false;
             for (const auto & arg : rightS)
-                if (!leftS.contains(arg)) return false;
+                if (std::find(leftS.begin(), leftS.end(), arg) == leftS.end()) return false;
             return true;
         }
 
@@ -585,6 +595,8 @@ bool ltlf::operator!=(const ltlf &rhs) const {
 }
 
 struct ltlf ltlf::simplify() const {
+    return *this;
+    /*
     switch (casusu) {
         case NEG_OF:
             return this->nnf().simplify();
@@ -686,7 +698,7 @@ struct ltlf ltlf::simplify() const {
 
         default:
             return {*this};
-    }
+    }*/
 }
 
 
@@ -794,8 +806,10 @@ struct ltlf ltlf::negate() const {
             return And(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case AND:
             return Or(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
+        case BOX:
+        case DIAMOND:
         case NEXT:
-            return Next(args.at(0).negate()).setBeingCompound(is_compound_predicate);
+            return *this;
         case UNTIL:
             return Release(args.at(0).negate(), args.at(1).negate()).setBeingCompound(is_compound_predicate);
         case RELEASE:

@@ -159,18 +159,18 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
             return ltlf::Neg(ltlf::WeakUntil(ltlf::Neg(right), left));
 
         case AltResponse:
-            return ltlf::Box(ltlf::Implies(right,
+            return ltlf::Box(ltlf::Implies(left,
                                            ltlf::Next(ltlf::Until(left.negate(), right))));
 
 
         case NegationAltResponse:
-            return ltlf::Neg(ltlf::Box(ltlf::Implies(right,
+            return ltlf::Neg(ltlf::Box(ltlf::Implies(left,
                                            ltlf::Next(ltlf::Until(left.negate(), right)))));
 
         case AltPrecedence: {
-            struct ltlf base = ltlf::WeakUntil(right.negate(), left);
+            struct ltlf base = ltlf::Until(right.negate(), left);
             return ltlf::And(base, ltlf::Box(ltlf::Implies(right,
-                                                           ltlf::Next(base))));
+                                                           ltlf::Next(ltlf::Or(base, ltlf::Box(right.negate()))))));
         }
 
         case AltSuccession: {
@@ -210,7 +210,7 @@ ltlf DeclareDataAware::toFiniteSemantics() const {
             return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Box(right))));
 
         case NotChainPrecedence:
-            return ltlf::Box(ltlf::Implies(left, ltlf::Neg(ltlf::Next(right))));
+            return ltlf::Box(ltlf::Implies(right, ltlf::Neg(ltlf::Next(left))));
 
         case NotCoExistence:
             return ltlf::Neg(ltlf::And(ltlf::Diamond(left), ltlf::Diamond(right)));

@@ -20,8 +20,17 @@ result_semantisch_align for_semantisch_inconsistency::compute_in_triplicate(cons
         double cost_sigma = 0.0;
         double cost_max = -std::numeric_limits<double>::max();
         double cost_hit = 0.0;
+        size_t i = 1;
         for (const auto &graph : V) {
             double alignment = align(graph, trace, epsilon);
+            /*if (alignment> 0.0) {
+                std::ofstream file{"f.dot"};
+                graph.dot(file, false);
+                file.close();
+                std::cerr << trace << " " << i << std::endl;
+                exit(1);
+            }*/
+            i++;
             cost_sigma += alignment;
             cost_max = std::max(alignment, cost_max);
             if (alignment > 0.0) cost_hit++;

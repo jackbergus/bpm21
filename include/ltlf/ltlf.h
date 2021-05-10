@@ -46,7 +46,9 @@ enum formula_t {
     RELEASE,
     TRUE,
     FALSE,
-    NUMERIC_ATOM
+    NUMERIC_ATOM,
+    BOX,
+    DIAMOND
 };
 
 
@@ -128,7 +130,7 @@ struct ltlf {
         return nnf().simplify()._isPotentialFinalState().casusu == TRUE;
     }
 
-    void collectStructuralElements(formula_t type, std::unordered_set<ltlf>& set, bool simplificationType) const;
+    void collectStructuralElements(formula_t type, std::vector<ltlf>& set, bool simplificationType) const;
     bool containsElement(formula_t type, const ltlf& item, bool simplificationType) const;
 
     // Printing
@@ -162,7 +164,7 @@ namespace std {
         {
             size_t init = 31;
             if ((k.casusu == OR) || (k.casusu == AND)) {
-                std::unordered_set<ltlf> elements;
+                std::vector<ltlf> elements;
                 k.collectStructuralElements(k.casusu, elements, true);
                 for (const auto& arg : elements)
                     init += (*this)(arg);

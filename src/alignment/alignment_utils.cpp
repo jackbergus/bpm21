@@ -57,6 +57,8 @@ double align(const FlexibleFA<std::string, size_t>& x, const std::string& path, 
     size_t tmpFin = -1;
     if (!graph.final_nodes.empty()) {
         tmpFin = *graph.final_nodes.begin();
+    } else {
+        return epsilon.size();
     }
     std::vector<size_t> V = graph.getNodeIds();
     std::unordered_map<size_t, size_t> map;

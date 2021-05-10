@@ -334,7 +334,7 @@ public:
         }
 
         std::unordered_set<size_t> candidatesForRemoval = unordered_difference(all, reached);
-        std::cerr << "Removal candidates: #" << candidatesForRemoval.size() << std::endl;
+       // std::cerr << "Removal candidates: #" << candidatesForRemoval.size() << std::endl;
         for (size_t nodeToBeRemoved : candidatesForRemoval) {
             removed_nodes.insert(nodeToBeRemoved);
             initial_nodes.erase(nodeToBeRemoved);
