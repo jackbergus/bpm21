@@ -52,6 +52,6 @@ This project is licensed under the GPLv2 License - see the [LICENSE](LICENSE.) f
 
 ## Acknowledgments
 
-* This work was part of the paper "_Aligning Data-Aware Declarative Process Models and Event Logs_" co-authored with Fabrizio Maggi, Andrea Marrella & Marco Montali
+* This work was part of the paper "_Aligning Data-Aware Declarative Process Models and Event Logs_" co-authored with Fabrizio Maggi, Andrea Marrella & Marco Montali. ([Video](https://www.youtube.com/watch?v=TYL2nkO1dkw))
 
 
