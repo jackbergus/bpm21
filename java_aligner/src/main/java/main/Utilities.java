@@ -1,11 +1,6 @@
 package main;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,94 +13,86 @@ import org.processmining.ltl2automaton.plugins.automaton.Transition;
 
 public class Utilities {
 	
-	public static Automaton getAutomatonForModelLearning(String filename) throws FileNotFoundException {
-        File file = new File(filename);
-        BufferedReader br = null;
-        
+	public static Automaton getAutomatonForModelLearningFromFile(File file) throws FileNotFoundException {
+        BufferedReader br;
         br = new BufferedReader(new FileReader(file));
-        
-        String st;
-        HashMap<Integer, State> states = new HashMap<>();
-        Automaton n = new Automaton();
+		return getAutomatonForModelLearingFromBufferReader(br);
+	}
 
-        try {
+	public static Automaton getAutomatonForModelLearningFromString(String file) throws FileNotFoundException {
+		BufferedReader br;
+		br = new BufferedReader(new StringReader(file));
+		return getAutomatonForModelLearingFromBufferReader(br);
+	}
+
+	private static Automaton getAutomatonForModelLearingFromBufferReader(BufferedReader br) {
+		String st;
+		HashMap<Integer, State> states = new HashMap<>();
+		Automaton n = new Automaton();
+		try {
 			while ((st = br.readLine()) != null) {
-			    if (st.contains("fake") || st.contains("digraph") || st.contains("}"))
-			        continue;
-			        //Transaction
-			    else if (st.contains("[label")) {
-			        //Transaction
-			        String[] splited = st.split(" ");
-			        String source = splited[0].trim();
-			        String target = splited[2].trim();
+				if (st.contains("fake") || st.contains("digraph") || st.contains("}"))
+					continue;
+					//Transaction
+				else if (st.contains("[label")) {
+					//Transaction
+					String[] splited = st.split(" ");
+					String source = splited[0].trim();
+					String target = splited[2].trim();
+					String label = splited[3].substring(7, splited[3].length() - 1);
+					Transition t = new Transition(states.get(Integer.parseInt(source)), states.get(Integer.parseInt(target)), label);
+					State source1 = states.get(Integer.parseInt(source));
+				}
+				// States
+				else {
+					st = st.trim();
+					String[] splited = st.split(" ");
 
-			        String label = splited[3].substring(7, splited[3].length() - 1);
-
-			        Transition t = new Transition(states.get(Integer.parseInt(source)), states.get(Integer.parseInt(target)), label);
-
-			        State source1 = states.get(Integer.parseInt(source));
-
-			    }
-			    // States
-			    else {
-			        st = st.trim();
-			        String[] splited = st.split(" ");
-
-			        if (splited.length > 2) {
-			            String label = splited[0];
-			            State s = new State(Integer.parseInt(label));
-			            s.setAccepting(true);
-			            n.addState(s);
-			            n.setInitial(s);
-			            states.put(Integer.parseInt(label), s);
-			        } else if (splited.length == 2) {
-			            String label = splited[0];
-			            State s = new State(Integer.parseInt(label));
-			            n.addState(s);
-			            String text = splited[1].substring(1, splited[1].length() - 1);
-			            if (text.equals("shape=doublecircle")) {
-			                s.setAccepting(true);
-			            } else {
-			                n.setInitial(s);
-			            }
-			            states.put(Integer.parseInt(label), s);
-			        } else {
-			            String label = splited[0];
-			            State s = new State(Integer.parseInt(label));
-			            n.addState(s);
-			            states.put(Integer.parseInt(label), s);
-			        }
+					if (splited.length > 2) {
+						String label = splited[0];
+						State s = new State(Integer.parseInt(label));
+						s.setAccepting(true);
+						n.addState(s);
+						n.setInitial(s);
+						states.put(Integer.parseInt(label), s);
+					} else if (splited.length == 2) {
+						String label = splited[0];
+						State s = new State(Integer.parseInt(label));
+						n.addState(s);
+						String text = splited[1].substring(1, splited[1].length() - 1);
+						if (text.equals("shape=doublecircle")) {
+							s.setAccepting(true);
+						} else {
+							n.setInitial(s);
+						}
+						states.put(Integer.parseInt(label), s);
+					} else {
+						String label = splited[0];
+						State s = new State(Integer.parseInt(label));
+						n.addState(s);
+						states.put(Integer.parseInt(label), s);
+					}
 
 
-			    }
+				}
 			}
+			br.close();
 		} catch (NumberFormatException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-        State s = n.getInit();
-
-        //System.out.println("ID stato iniziale " + s.getId());
-        //System.out.println("# stati automa " + n.getStateCount());
-
-        //System.out.println("# transizioni stato iniziale " + s.getOutputSize());
-        //System.out.println("# transizioni automa " + n.getTransitionCount());
-        Iterator<State> it = n.iterator();
-        while (it.hasNext()) {
-            State ss = it.next();
-            Iterator<Transition> transitions = ss.getOutput().iterator();
-            while (transitions.hasNext()) {
-                Transition t = transitions.next();
-                //System.out.println("Source " + t.getSource() + " Target " + t.getTarget() + " Label " + t.getLabel().getaLiteral());
-            }
-        }
-        
-        
-        
-        return n;
+		State s = n.getInit();
+		Iterator<State> it = n.iterator();
+		while (it.hasNext()) {
+			State ss = it.next();
+			Iterator<Transition> transitions = ss.getOutput().iterator();
+			while (transitions.hasNext()) {
+				Transition t = transitions.next();
+			}
+		}
+		return n;
 	}
-	
+
 	public static Automaton getAutomatonForModelLearningDot(String filename) throws FileNotFoundException {
         File file = new File(filename);
         BufferedReader br = null;

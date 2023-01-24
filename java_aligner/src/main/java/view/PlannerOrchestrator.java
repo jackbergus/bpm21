@@ -7,7 +7,7 @@ import java.awt.Toolkit;
 import javax.swing.JFrame;
 import main.Constants;
 
-public class Desktop extends JFrame
+public class PlannerOrchestrator extends JFrame
 {
 
 	private static final long serialVersionUID = 1L;
@@ -17,23 +17,30 @@ public class Desktop extends JFrame
 	private TracesPerspective tracesPanel;
 	private ConstraintsPerspective constraintsPanel;
 	
-	public Desktop()
+	public PlannerOrchestrator()
 	{
 		super();
 		initComponent();
 	}
 
-	public void initComponent()
-	{		
+	public void view() {
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation ( ( screenSize.width / 3 ) - ( this.getWidth ( ) / 3 ), (
+				screenSize.height / 3 ) - ( this.getHeight ( ) / 3 ) );
+		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		this.setTitle("Plan-based Alignment for Declarative Processes");
+		this.setSize(700, 670);
+		this.setResizable(true);
+		this.setVisible(true);
+	}
+
+	public void initComponent() {
 		Container content = this.getContentPane();
-	    
-	    content.setLayout(new FlowLayout()); 	
-		
+	    content.setLayout(new FlowLayout());
 	    menuBar = new MenuPerspective();	    
 	    alphabetPanel = new AlphabetPerspective();
 	    tracesPanel = new TracesPerspective();
 	    constraintsPanel = new ConstraintsPerspective();
-	    
 	    Constants.setMenuPerspective(menuBar);
 	    Constants.setAlphabetPerspective(alphabetPanel);
 	    Constants.setTracesPerspective(tracesPanel);
@@ -42,23 +49,22 @@ public class Desktop extends JFrame
 	    Constants.getTracesPerspective().setComponentEnabled(false);
 	    Constants.getConstraintsPerspective().setComponentEnabled(false);
 
-	    this.setJMenuBar(menuBar);
-	    this.add(alphabetPanel);	
-	    this.add(tracesPanel);	
-	    this.add(constraintsPanel);	
-
-	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-
-	    this.setLocation ( ( screenSize.width / 3 ) - ( this.getWidth ( ) / 3 ), (
-	    screenSize.height / 3 ) - ( this.getHeight ( ) / 3 ) );
-
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);		
-		this.setTitle("Plan-based Alignment for Declarative Processes");
-		
+		this.setJMenuBar(menuBar);
+		this.add(alphabetPanel);
+		this.add(tracesPanel);
+		this.add(constraintsPanel);
 		Constants.setDesktop(this);
-		
-	    this.setSize(700, 670);
-	    this.setResizable(true);
-	    this.setVisible(true);
+	}
+
+	public TracesPerspective getTracePerspective() {
+		return tracesPanel;
+	}
+
+	public ConstraintsPerspective getConstraintPerspective() {
+		return constraintsPanel;
+	}
+
+	public PlannerPerspective getPlannerPerspective() {
+		return Constants.getPlannerPerspective();
 	}
 }

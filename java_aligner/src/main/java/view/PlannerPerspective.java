@@ -130,11 +130,7 @@ public class PlannerPerspective extends JDialog
 		constraintsScrollPane.setPreferredSize(new Dimension(390,60));
 		constraintsScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		constraintsScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-	    
-		//FDlazyGreedyLabel = new JLabel("Lazy Greedy (Fast-Downward)");
-		//FDlazyGreedyLabel.setPreferredSize(new Dimension(350,15));
-		//FDlazyGreedyCheckBox = new JCheckBox();
-		//FDlazyGreedyCheckBox.setPreferredSize(new Dimension(30,15));
+
 		FDoptimalLabel = new JLabel("Blind A* (Fast-Downward)");
 		FDoptimalLabel.setPreferredSize(new Dimension(350,15));
 		FDoptimalCheckBox = new JCheckBox();
