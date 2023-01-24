@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>uk.knobab</groupId>
+    <artifactId>aligner_bpm21</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>19</maven.compiler.source>
+        <maven.compiler.target>19</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>javailp-repo</id>
+            <url>https://maven.aksw.org/repository/internal/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.vbmacher</groupId>
+            <artifactId>java-cup-runtime</artifactId>
+            <version>11b</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/net.sf/javailp -->
+        <dependency>
+            <groupId>net.sf</groupId>
+            <artifactId>javailp</artifactId>
+            <version>1.2a</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.datumbox/lpsolve -->
+        <dependency>
+            <groupId>com.datumbox</groupId>
+            <artifactId>lpsolve</artifactId>
+            <version>5.5.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.processmining</groupId>
+            <artifactId>declare_visualizer</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/DeclareVisualizer.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.processmining</groupId>
+            <artifactId>ltl2automaton</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/LTL2Automaton.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.xes</groupId>
+            <artifactId>openxes</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/OpenXES.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>code.deckfour.org</groupId>
+            <artifactId>OpenXES-XStream</artifactId>
+            <version>2.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/OpenXES-XStream.jar</systemPath>
+        </dependency>
+
+    </dependencies>
+
+</project>
